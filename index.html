@@ -372,7 +372,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       var bench = bn && r === b.baris, n = bench ? bn : b.kiri + b.kanan;
       var lc = bench ? 0 : leftCount(b, r);
       for (var c = 0; c < n; c++) {
-        if (!bench && c < b.kiri - lc) continue;
+        if (!bench && c >= lc && c < b.kiri) continue;
         out.push(r + LETTERS[c]);
       }
     }
@@ -525,13 +525,14 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         left = '<div class="doorseat" style="width:calc(var(--sw) * ' + b.kiri + ' + var(--gap) * ' + (b.kiri - 1) + ')">🚪 Pintu<small>Belakang</small></div>';
       }
       var lc = leftCount(b, r), cut = b.kiri - lc;
-      if (!doorRow && cut > 0) {
-        left = '<div style="width:calc(var(--sw) * ' + cut + ' + var(--gap) * ' + cut + ')"></div>';
-      }
       for (var c = 0; c < b.kiri + b.kanan; c++) {
         var code = r + LETTERS[c];
-        if (c < b.kiri) { if (c >= cut) left += seatHtml(code, m[code]); }
+        if (c < b.kiri) { if (c < lc) left += seatHtml(code, m[code]); }
         else right += seatHtml(code, m[code]);
+      }
+      /* kursi tetap di sisi kiri (jendela), ruang kosong di dekat lorong */
+      if (!doorRow && cut > 0) {
+        left += '<div style="width:calc(var(--sw) * ' + cut + ' + var(--gap) * ' + (cut - 1) + ')"></div>';
       }
       rows += '<div class="brow"><div class="side">' + left + '</div><div class="aisle">' + r +
         '</div><div class="side">' + right + '</div></div>';
