@@ -509,7 +509,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
           var code = r + LETTERS[c];
           seatsBack += seatHtml(code, m[code]);
         }
-        rows += '<div class="brow" style="margin-top:8px"><div class="side" style="gap:6px">' + seatsBack + '</div></div>';
+        // PERUBAHAN DI SINI: Menggunakan width:100% dan justify-content:space-between
+        rows += '<div class="brow" style="margin-top:8px"><div style="display:flex; width:100%; justify-content:space-between;">' + seatsBack + '</div></div>';
       } else {
         var left = '', right = '';
         if (doorRow) {
@@ -533,7 +534,6 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       '<div class="front"><div class="door">🚪 Pintu Depan</div><div class="driver">' + WHEEL + 'Sopir</div></div>' +
       rows + '<div class="back">🚌 Belakang</div></div></div>';
   }
-
   function render() {
     var app = $('#app');
     app.className = S.admin ? 'admin' : '';
