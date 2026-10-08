@@ -354,6 +354,13 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   function curBus() { return S.buses.find(function (b) { return b.id === S.busId; }); }
   /* pintu belakang: pada baris yang dipilih, sisi kiri tidak ada kursi (diganti kotak pintu) */
   function isDoorRow(b, r) { return Number(b.pintuBaris) === r && r <= b.baris; }
+  /* jumlah kursi sisi kiri pada baris r (pintu = 0; baris khusus = 1 atau 2; selain itu = kiri) */
+  function leftCount(b, r) {
+    if (isDoorRow(b, r)) return 0;
+    var j = Number(b.kiriJumlah);
+    if (Number(b.kiriBaris) === r && j >= 1 && j < b.kiri) return j;
+    return b.kiri;
+  }
   /* jumlah kursi baris paling belakang (5 atau 6); 0 = sama seperti baris biasa */
   function backN(b) {
     var n = Number(b.belakang);
@@ -363,8 +370,9 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     var out = [], bn = backN(b);
     for (var r = 1; r <= b.baris; r++) {
       var bench = bn && r === b.baris, n = bench ? bn : b.kiri + b.kanan;
+      var lc = bench ? 0 : leftCount(b, r);
       for (var c = 0; c < n; c++) {
-        if (!bench && isDoorRow(b, r) && c < b.kiri) continue;
+        if (!bench && c < b.kiri - lc) continue;
         out.push(r + LETTERS[c]);
       }
     }
@@ -516,9 +524,13 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       if (doorRow) {
         left = '<div class="doorseat" style="width:calc(var(--sw) * ' + b.kiri + ' + var(--gap) * ' + (b.kiri - 1) + ')">🚪 Pintu<small>Belakang</small></div>';
       }
+      var lc = leftCount(b, r), cut = b.kiri - lc;
+      if (!doorRow && cut > 0) {
+        left = '<div style="width:calc(var(--sw) * ' + cut + ' + var(--gap) * ' + cut + ')"></div>';
+      }
       for (var c = 0; c < b.kiri + b.kanan; c++) {
         var code = r + LETTERS[c];
-        if (c < b.kiri) { if (!doorRow) left += seatHtml(code, m[code]); }
+        if (c < b.kiri) { if (c >= cut) left += seatHtml(code, m[code]); }
         else right += seatHtml(code, m[code]);
       }
       rows += '<div class="brow"><div class="side">' + left + '</div><div class="aisle">' + r +
@@ -676,8 +688,9 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   }
 
   function openBusForm(editing) {
-    var b = editing ? curBus() : { nama: '', baris: 10, kiri: 2, kanan: 2, ket: '', pintuBaris: 9, belakang: 0 };
+    var b = editing ? curBus() : { nama: '', baris: 10, kiri: 2, kanan: 2, ket: '', pintuBaris: 9, belakang: 0, kiriBaris: 0, kiriJumlah: 1 };
     var bel = Number(b.belakang) || 0, pb = Number(b.pintuBaris) || 0;
+    var kb = Number(b.kiriBaris) || 0, kj = Number(b.kiriJumlah) === 2 ? 2 : 1;
     modal('<h3>' + (editing ? '✏️ Atur Bus' : '🚌 Tambah Bus') + '</h3>' +
       '<form id="fBus" data-id="' + (editing ? esc(b.id) : '') + '">' +
       '<label>Nama bus<input type="text" name="nama" required maxlength="40" value="' + esc(b.nama) + '" placeholder="Bus 1"></label>' +
@@ -689,6 +702,10 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         '<option value="5"' + (bel === 5 ? ' selected' : '') + '>5 kursi</option>' +
         '<option value="6"' + (bel === 6 ? ' selected' : '') + '>6 kursi</option></select></label>' +
       '<label>Pintu belakang (sisi kiri)<select name="pintuBaris" id="selPintu">' + pintuOpts(Number(b.baris) || 1, pb) + '</select></label>' +
+      '<div style="display:grid;grid-template-columns:3fr 2fr;gap:10px">' +
+        '<label>Baris dengan kursi kiri berkurang<select name="kiriBaris" id="selKiri">' + pintuOpts(Number(b.baris) || 1, kb).replace('Tidak ada pintu belakang', 'Tidak ada') + '</select></label>' +
+        '<label>Kursi kiri<select name="kiriJumlah"><option value="1"' + (kj === 1 ? ' selected' : '') + '>1 kursi</option>' +
+        '<option value="2"' + (kj === 2 ? ' selected' : '') + '>2 kursi</option></select></label></div>' +
       '<label>Keterangan<input type="text" name="ket" maxlength="120" value="' + esc(b.ket) + '" placeholder="Rute Timur · berangkat 06.30"></label>' +
       '<div class="actions">' + (editing ? '<button type="button" class="btn ghost left" style="color:var(--danger)" data-act="delBus">Hapus bus</button>' : '') +
       '<button type="button" class="btn ghost" data-close>Batal</button><button class="btn primary">Simpan</button></div></form>');
@@ -744,6 +761,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       var sel = $('#selPintu'), n = Math.max(1, Math.min(25, parseInt(e.target.value, 10) || 1));
       var v = Number(sel.value);
       sel.innerHTML = pintuOpts(n, v <= n ? v : 0);
+      var sk = $('#selKiri'), vk = Number(sk.value);
+      sk.innerHTML = pintuOpts(n, vk <= n ? vk : 0).replace('Tidak ada pintu belakang', 'Tidak ada');
     }
   });
   modalEl.addEventListener('submit', function (e) {
@@ -771,7 +790,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         return api.saveBus(S.pin, {
           id: id || '', nama: d.get('nama'), baris: Number(d.get('baris')),
           kiri: Number(d.get('kiri')), kanan: Number(d.get('kanan')), belakang: Number(d.get('belakang')), ket: d.get('ket'),
-          pintuBaris: Number(d.get('pintuBaris'))
+          pintuBaris: Number(d.get('pintuBaris')), kiriBaris: Number(d.get('kiriBaris')), kiriJumlah: Number(d.get('kiriJumlah'))
         }).then(function (newId) { if (!id) S.busId = newId; });
       }, 'Bus tersimpan ✓');
     } else if (f.id === 'fPin') {
