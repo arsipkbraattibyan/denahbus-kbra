@@ -480,7 +480,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     for (var r = 1; r <= b.baris; r++) {
       var left = '', right = '', doorRow = isDoorRow(b, r);
       if (doorRow) {
-        left = '<div class="doorseat" style="width:calc(var(--sw) * ' + b.kiri + ' + var(--gap) * ' + (b.kiri - 1) + ')">🚪 Pintu<small>tengah</small></div>';
+        left = '<div class="doorseat" style="width:calc(var(--sw) * ' + b.kiri + ' + var(--gap) * ' + (b.kiri - 1) + ')">🚪 Pintu<small>belakang</small></div>';
       }
       for (var c = 0; c < b.kiri + b.kanan; c++) {
         var code = r + LETTERS[c];
@@ -632,7 +632,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       '<label>Kursi kiri<input type="number" name="kiri" min="1" max="3" required value="' + b.kiri + '"></label>' +
       '<label>Kursi kanan<input type="number" name="kanan" min="1" max="3" required value="' + b.kanan + '"></label></div>' +
       '<label>Keterangan<input type="text" name="ket" maxlength="120" value="' + esc(b.ket) + '" placeholder="Rute Timur · berangkat 06.30"></label>' +
-      '<label class="chk"><input type="checkbox" name="pintu"' + (b.pintu ? ' checked' : '') + '>Ada pintu tengah di kiri (1 baris sebelum paling belakang)</label>' +
+      '<label class="chk"><input type="checkbox" name="pintu"' + (b.pintu ? ' checked' : '') + '>Ada pintu belakang di kiri (1 baris sebelum paling belakang)</label>' +
       '<div class="actions">' + (editing ? '<button type="button" class="btn ghost left" style="color:var(--danger)" data-act="delBus">Hapus bus</button>' : '') +
       '<button type="button" class="btn ghost" data-close>Batal</button><button class="btn primary">Simpan</button></div></form>');
   }
