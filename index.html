@@ -115,7 +115,8 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 .front{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:6px 8px 14px;margin-bottom:12px;border-bottom:3px dashed #ffe08a}
 .driver{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:800;color:#6a5a2a;background:#fff;padding:7px 14px;border-radius:99px;border:2px solid #ffe08a}
 .door{font-size:12.5px;font-weight:800;color:#6a5a2a;border:2px dashed #e8b84a;padding:6px 14px;border-radius:99px;background:#fff}
-.brow{display:flex;justify-content:center;align-items:center;gap:8px;margin-bottom:16px}
+.brow{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:16px;width:100%}
+.side.bench{width:100%;justify-content:space-between}
 .side{--gap:8px;display:flex;gap:var(--gap)}
 .aisle{width:34px;text-align:center;font-family:'Fredoka',sans-serif;font-size:13px;font-weight:600;color:#c9a23a}
 .back{text-align:center;font-family:'Fredoka',sans-serif;font-size:13px;letter-spacing:.08em;color:#b9923a;font-weight:600;margin-top:4px;padding-top:10px;border-top:3px dashed #ffe08a}
@@ -351,13 +352,21 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
 
   /* ---------- util data ---------- */
   function curBus() { return S.buses.find(function (b) { return b.id === S.busId; }); }
-  /* pintu belakang: sisi kiri pada baris tepat di depan baris paling belakang tidak ada kursi */
-  function isDoorRow(b, r) { return !!b.pintu && b.baris >= 2 && r === b.baris - 1; }
+  /* pintu belakang: pada baris yang dipilih, sisi kiri tidak ada kursi (diganti kotak pintu) */
+  function isDoorRow(b, r) { return Number(b.pintuBaris) === r && r <= b.baris; }
+  /* jumlah kursi baris paling belakang (5 atau 6); 0 = sama seperti baris biasa */
+  function backN(b) {
+    var n = Number(b.belakang);
+    return ((n === 5 || n === 6) && n !== b.kiri + b.kanan) ? n : 0;
+  }
   function seatsOf(b) {
-    var out = [], n = b.kiri + b.kanan;
-    for (var r = 1; r <= b.baris; r++) for (var c = 0; c < n; c++) {
-      if (isDoorRow(b, r) && c < b.kiri) continue;
-      out.push(r + LETTERS[c]);
+    var out = [], bn = backN(b);
+    for (var r = 1; r <= b.baris; r++) {
+      var bench = bn && r === b.baris, n = bench ? bn : b.kiri + b.kanan;
+      for (var c = 0; c < n; c++) {
+        if (!bench && isDoorRow(b, r) && c < b.kiri) continue;
+        out.push(r + LETTERS[c]);
+      }
     }
     return out;
   }
@@ -495,7 +504,14 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
 
   function busHtml(b, m) {
     var rows = '';
+    var bn = backN(b);
     for (var r = 1; r <= b.baris; r++) {
+      if (bn && r === b.baris) {
+        var all = '';
+        for (var k = 0; k < bn; k++) all += seatHtml(r + LETTERS[k], m[r + LETTERS[k]]);
+        rows += '<div class="brow"><div class="side bench">' + all + '</div></div>';
+        continue;
+      }
       var left = '', right = '', doorRow = isDoorRow(b, r);
       if (doorRow) {
         left = '<div class="doorseat" style="width:calc(var(--sw) * ' + b.kiri + ' + var(--gap) * ' + (b.kiri - 1) + ')">🚪 Pintu<small>Belakang</small></div>';
@@ -508,7 +524,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       rows += '<div class="brow"><div class="side">' + left + '</div><div class="aisle">' + r +
         '</div><div class="side">' + right + '</div></div>';
     }
-    return '<div class="bus-wrap"><div class="bus" style="--cols:' + (b.kiri + b.kanan) + '">' +
+    return '<div class="bus-wrap"><div class="bus" style="--cols:' + Math.max(b.kiri + b.kanan, bn) + '">' +
       '<div class="front"><div class="door">🚪 Pintu Depan</div><div class="driver">' + WHEEL + 'Sopir</div></div>' +
       rows + '<div class="back">🚌 Belakang</div></div></div>';
   }
@@ -652,16 +668,28 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       '<button type="button" class="btn ghost" data-close>Batal</button><button class="btn primary">Simpan</button></div></form>');
   }
 
+  /* pilihan baris pintu belakang: 0 = tidak ada, 1..n = nomor baris */
+  function pintuOpts(n, v) {
+    var h = '<option value="0"' + (!v ? ' selected' : '') + '>Tidak ada pintu belakang</option>';
+    for (var i = 1; i <= n; i++) h += '<option value="' + i + '"' + (i === v ? ' selected' : '') + '>Baris ke-' + i + '</option>';
+    return h;
+  }
+
   function openBusForm(editing) {
-    var b = editing ? curBus() : { nama: '', baris: 10, kiri: 2, kanan: 2, ket: '', pintu: true };
+    var b = editing ? curBus() : { nama: '', baris: 10, kiri: 2, kanan: 2, ket: '', pintuBaris: 9, belakang: 0 };
+    var bel = Number(b.belakang) || 0, pb = Number(b.pintuBaris) || 0;
     modal('<h3>' + (editing ? '✏️ Atur Bus' : '🚌 Tambah Bus') + '</h3>' +
       '<form id="fBus" data-id="' + (editing ? esc(b.id) : '') + '">' +
       '<label>Nama bus<input type="text" name="nama" required maxlength="40" value="' + esc(b.nama) + '" placeholder="Bus 1"></label>' +
       '<div class="row2"><label>Baris<input type="number" name="baris" min="1" max="25" required value="' + b.baris + '"></label>' +
       '<label>Kursi kiri<input type="number" name="kiri" min="1" max="3" required value="' + b.kiri + '"></label>' +
       '<label>Kursi kanan<input type="number" name="kanan" min="1" max="3" required value="' + b.kanan + '"></label></div>' +
+      '<label>Jumlah kursi baris paling belakang<select name="belakang">' +
+        '<option value="0"' + (!bel ? ' selected' : '') + '>Biasa (sama seperti baris lain)</option>' +
+        '<option value="5"' + (bel === 5 ? ' selected' : '') + '>5 kursi</option>' +
+        '<option value="6"' + (bel === 6 ? ' selected' : '') + '>6 kursi</option></select></label>' +
+      '<label>Pintu belakang (sisi kiri)<select name="pintuBaris" id="selPintu">' + pintuOpts(Number(b.baris) || 1, pb) + '</select></label>' +
       '<label>Keterangan<input type="text" name="ket" maxlength="120" value="' + esc(b.ket) + '" placeholder="Rute Timur · berangkat 06.30"></label>' +
-      '<label class="chk"><input type="checkbox" name="pintu"' + (b.pintu ? ' checked' : '') + '>Ada pintu belakang di kiri (1 baris sebelum paling belakang)</label>' +
       '<div class="actions">' + (editing ? '<button type="button" class="btn ghost left" style="color:var(--danger)" data-act="delBus">Hapus bus</button>' : '') +
       '<button type="button" class="btn ghost" data-close>Batal</button><button class="btn primary">Simpan</button></div></form>');
   }
@@ -711,6 +739,13 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       $('#infoLbl').textContent = infoLabel('Wali');
     }
   });
+  modalEl.addEventListener('input', function (e) {
+    if (e.target.name === 'baris') {
+      var sel = $('#selPintu'), n = Math.max(1, Math.min(25, parseInt(e.target.value, 10) || 1));
+      var v = Number(sel.value);
+      sel.innerHTML = pintuOpts(n, v <= n ? v : 0);
+    }
+  });
   modalEl.addEventListener('submit', function (e) {
     e.preventDefault();
     var f = e.target, d = new FormData(f);
@@ -735,8 +770,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       run(function () {
         return api.saveBus(S.pin, {
           id: id || '', nama: d.get('nama'), baris: Number(d.get('baris')),
-          kiri: Number(d.get('kiri')), kanan: Number(d.get('kanan')), ket: d.get('ket'),
-          pintu: d.get('pintu') === 'on'
+          kiri: Number(d.get('kiri')), kanan: Number(d.get('kanan')), belakang: Number(d.get('belakang')), ket: d.get('ket'),
+          pintuBaris: Number(d.get('pintuBaris'))
         }).then(function (newId) { if (!id) S.busId = newId; });
       }, 'Bus tersimpan ✓');
     } else if (f.id === 'fPin') {
