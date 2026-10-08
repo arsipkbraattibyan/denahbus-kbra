@@ -180,6 +180,7 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 .sheet p{margin:0 0 12px;font-size:14px;font-weight:600}
 .pill{font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;background:var(--sun-soft);color:#7a5400;padding:4px 12px;border-radius:99px}
 .sheet label{display:block;font-size:13px;font-weight:800;margin:12px 0 0}
+.sheet [hidden]{display:none!important}
 .sheet input[type=text],.sheet input[type=password],.sheet input[type=number],.sheet select,.sheet input:not([type]){width:100%;margin-top:6px;padding:11px 14px;border-radius:14px;border:2px solid var(--line);background:var(--soft);outline:none;font-weight:600}
 .sheet input:focus,.sheet select:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft)}
 .seg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
@@ -290,6 +291,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   var SCHOOL_NAME = 'KB RA At Tibyan';
   var EVENT_NAME  = 'Outbound 2026';        // ganti sesuai acara
   var REFRESH_MS  = 60000;                  // pembaruan otomatis (60 dtk)
+  var KELAS = ['KB', 'TK A', 'TK B'];       // pilihan kelas untuk anak
   /* ========================== */
 
   var LETTERS = 'ABCDEF';
@@ -366,7 +368,15 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   function tipeCls(t) { return t === 'Wali' ? 'wali' : (t === 'Guru' ? 'guru' : 'anak'); }
   function emojiOf(t) { return t === 'Wali' ? '👪' : (t === 'Guru' ? '🧑‍🏫' : '🧒'); }
   function infoLabel(t) {
-    return t === 'Wali' ? 'Wali dari (nama anak)' : (t === 'Guru' ? 'Tugas (mis. Pendamping, Wali kelas RA B)' : 'Kelas (mis. KB atau RA A)');
+    return t === 'Wali' ? 'Wali dari (nama anak)' : (t === 'Guru' ? 'Tugas (mis. Pendamping, Wali kelas TK B)' : 'Kelas');
+  }
+  /* pilihan kelas untuk anak; data lama yang tidak ada di daftar tetap ditampilkan */
+  function kelasOpts(v) {
+    var list = KELAS.slice();
+    if (v && list.indexOf(v) < 0) list.push(v);
+    return '<option value="">— Pilih kelas —</option>' + list.map(function (k) {
+      return '<option value="' + esc(k) + '"' + (k === v ? ' selected' : '') + '>' + esc(k) + '</option>';
+    }).join('');
   }
   function descOf(p) {
     var i = p.info ? esc(p.info) : '';
@@ -612,15 +622,22 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     var names = S.pnp.filter(function (x) { return x.busId === b.id && x.tipe === 'Anak'; })
       .map(function (x) { return '<option value="' + esc(x.nama) + '">'; }).join('');
     var tipe = p ? p.tipe : 'Anak';
+    var isAnak = tipe === 'Anak';
     modal('<h3>' + (p ? 'Ubah penumpang' : 'Isi kursi') + ' <span class="pill">Kursi ' + code + '</span></h3>' +
       '<form id="fSeat" data-old="' + (p ? code : '') + '">' +
       '<label>Nama lengkap<input type="text" name="nama" required maxlength="60" autocomplete="off" value="' + esc(p ? p.nama : '') + '"></label>' +
       '<div class="seg"><label><input type="radio" name="tipe" value="Anak"' + (tipe === 'Anak' ? ' checked' : '') + '><span>🧒 Anak</span></label>' +
       '<label><input type="radio" name="tipe" value="Wali"' + (tipe === 'Wali' ? ' checked' : '') + '><span>👪 Wali</span></label>' +
       '<label><input type="radio" name="tipe" value="Guru"' + (tipe === 'Guru' ? ' checked' : '') + '><span>🧑‍🏫 Guru</span></label></div>' +
-      '<label><span id="infoLbl">' + infoLabel(tipe) + '</span>' +
+      /* Anak: pilihan kelas */
+      '<label id="lblKelas"' + (isAnak ? '' : ' hidden') + '><span>Kelas</span>' +
+      '<select name="info" required' + (isAnak ? '' : ' disabled') + '>' +
+        kelasOpts(p && p.tipe === 'Anak' ? p.info : '') + '</select></label>' +
+      /* Wali / Guru: isian teks */
+      '<label id="lblInfo"' + (isAnak ? ' hidden' : '') + '><span id="infoLbl">' + infoLabel(tipe) + '</span>' +
       '<input type="text" name="info" maxlength="60" autocomplete="off"' + (tipe === 'Wali' ? ' list="dlAnak"' : '') +
-      ' value="' + esc(p ? p.info : '') + '"></label><datalist id="dlAnak">' + names + '</datalist>' +
+        (isAnak ? ' disabled' : '') + ' value="' + esc(p && p.tipe !== 'Anak' ? p.info : '') + '"></label>' +
+      '<datalist id="dlAnak">' + names + '</datalist>' +
       '<label>Kursi<select name="kursi">' + free.map(function (s) {
         return '<option value="' + s + '"' + (s === code ? ' selected' : '') + '>' + s + (s === code ? ' (saat ini)' : ' — kosong') + '</option>';
       }).join('') + '</select></label>' +
@@ -675,9 +692,15 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   });
   modalEl.addEventListener('change', function (e) {
     if (e.target.name === 'tipe') {
-      var wali = e.target.value === 'Wali', inp = modalEl.querySelector('input[name=info]');
-      $('#infoLbl').textContent = infoLabel(e.target.value);
-      if (wali) inp.setAttribute('list', 'dlAnak'); else inp.removeAttribute('list');
+      var t = e.target.value, isAnak = t === 'Anak';
+      var sel = modalEl.querySelector('select[name=info]');
+      var inp = modalEl.querySelector('input[name=info]');
+      $('#lblKelas').hidden = !isAnak;
+      $('#lblInfo').hidden = isAnak;
+      sel.disabled = !isAnak;
+      inp.disabled = isAnak;
+      $('#infoLbl').textContent = infoLabel(t);
+      if (t === 'Wali') inp.setAttribute('list', 'dlAnak'); else inp.removeAttribute('list');
     }
   });
   modalEl.addEventListener('submit', function (e) {
