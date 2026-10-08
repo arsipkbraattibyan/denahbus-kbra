@@ -40,22 +40,23 @@ button,input,select{font:inherit;color:inherit}
 /* ===== header ===== */
 .top{position:relative;overflow:hidden;width:calc(100% - 24px);max-width:1156px;margin:14px auto 8px;padding:18px 20px;border-radius:30px;
   background:linear-gradient(115deg,#dff3ff 0%,#fff3d1 55%,#ffe2ee 100%);border:3px solid #fff;box-shadow:var(--shadow);
-  display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:'logo titles btn' 'search search search';gap:14px 22px;align-items:center}
 .top>*{position:relative;z-index:1;min-width:0}
 .top .deco{position:absolute;z-index:0;pointer-events:none;opacity:.9;font-size:28px;line-height:1}
-.deco.d1{top:6px;left:38%;font-size:34px;opacity:.8}
-.deco.d2{bottom:4px;left:55%;font-size:22px}
-.deco.d3{top:8px;right:210px;font-size:20px}
-.brand{display:flex;gap:14px;align-items:center;flex:1 1 280px}
-.logo{width:60px;height:60px;border-radius:50%;background:#fff;border:3px solid #fff;display:grid;place-items:center;font-size:30px;box-shadow:0 6px 16px -6px rgba(91,61,245,.45);overflow:hidden;padding:3px;flex:0 0 auto}
+.deco.d1{top:8px;right:220px;font-size:36px;opacity:.85}
+.deco.d2{top:46px;right:300px;font-size:20px}
+.deco.d3{top:10px;right:120px;font-size:22px}
+.logo{grid-area:logo;width:96px;height:96px;border-radius:50%;background:#fff;border:4px solid #fff;display:grid;place-items:center;font-size:48px;box-shadow:0 10px 22px -8px rgba(91,61,245,.5);overflow:hidden;padding:4px}
 .logo img{width:100%;height:100%;object-fit:contain;display:block;border-radius:50%}
-.brand h1{font-size:25px;margin:0;font-weight:700;letter-spacing:-.01em;line-height:1.1}
-.brand p{margin:4px 0 0;font-size:13.5px;font-weight:600;color:#5d5688}
-.search{position:relative;flex:1 1 260px;max-width:400px}
-.search input{width:100%;padding:13px 16px 13px 44px;border-radius:99px;border:3px solid #fff;background:#fff;outline:none;transition:.15s;box-shadow:0 6px 16px -10px rgba(91,61,245,.5);font-weight:600}
+.titles{grid-area:titles;min-width:0}
+.titles h1{font-size:clamp(17px,3.6vw,40px);margin:0;font-weight:700;letter-spacing:-.01em;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.titles p{margin:6px 0 0;font-size:14.5px;font-weight:700;color:#5d5688;line-height:1.35}
+#adminBtn{grid-area:btn;padding:12px 22px}
+.search{grid-area:search;position:relative;width:100%}
+.search input{width:100%;padding:15px 20px 15px 50px;border-radius:99px;border:3px solid #fff;background:#fff;outline:none;transition:.15s;box-shadow:0 6px 16px -10px rgba(91,61,245,.5);font-weight:600}
 .search input::placeholder{color:#9a95b8;font-weight:600}
 .search input:focus{border-color:var(--primary)}
-.search::before{content:'🔍';position:absolute;left:17px;top:50%;transform:translateY(-50%);font-size:15px;z-index:2}
+.search::before{content:'🔍';position:absolute;left:20px;top:50%;transform:translateY(-50%);font-size:15px;z-index:2}
 #results{position:absolute;left:0;right:0;top:calc(100% + 8px);background:var(--card);border:2px solid var(--line);border-radius:20px;box-shadow:var(--shadow);display:none;z-index:30;overflow:hidden}
 #results.show{display:block}
 .res{padding:11px 16px;cursor:pointer;display:flex;flex-direction:column;gap:1px;font-size:14px}
@@ -209,16 +210,22 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 
 footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted);padding:0 16px 28px}
 
+@media (max-width:760px){
+  .top{grid-template-areas:'logo titles titles' 'search search btn'}
+  .titles h1{font-size:clamp(17px,4.6vw,34px)}
+}
+
 @media (max-width:520px){
   main{padding:6px 10px 40px}
-  .top{width:calc(100% - 16px);margin-top:8px;padding:14px 14px;gap:10px;border-radius:24px}
-  .brand{order:1;flex:1 1 0;min-width:0;gap:10px}
-  #adminBtn{order:2;flex:0 0 auto;padding:9px 12px;font-size:13px}
-  .search{order:3;flex:1 1 100%;max-width:none}
-  .logo{width:48px;height:48px;font-size:24px}
-  .brand h1{font-size:19px}
-  .brand p{font-size:12px}
+  .top{width:calc(100% - 16px);margin-top:8px;padding:14px;gap:12px 12px;border-radius:24px;
+       grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:'logo titles titles' 'search search btn'}
+  .logo{width:72px;height:72px;font-size:36px;border-width:3px}
+  .titles p{font-size:12.5px;margin-top:4px}
+  #adminBtn{padding:11px 14px;font-size:13px}
+  .search input{padding:12px 14px 12px 42px}
+  .search::before{left:16px}
   .deco.d2,.deco.d3{display:none}
+  .deco.d1{top:4px;right:10px;font-size:26px}
   .card{padding:12px;border-radius:22px}
   .card-head h2{font-size:21px}
   .bus-wrap{padding:12px 10px 0}
@@ -258,12 +265,10 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
 
 <header class="top no-print">
   <span class="deco d1">☁️</span><span class="deco d2">⭐</span><span class="deco d3">🎈</span>
-  <div class="brand">
-    <div class="logo"><img src="logo.png" alt="Logo KB RA At Tibyan" onerror="this.replaceWith(document.createTextNode('🐥'))"></div>
-    <div>
-      <h1 id="title">Denah Bus Outbound 2026</h1>
-      <p id="school">KB RA At Tibyan · cari nama si kecil, temukan kursinya</p>
-    </div>
+  <div class="logo"><img src="logo.png" alt="Logo KB RA At Tibyan" onerror="this.replaceWith(document.createTextNode('🐥'))"></div>
+  <div class="titles">
+    <h1 id="title">Denah Bus Outbound 2026</h1>
+    <p id="school">KB RA At Tibyan · cari nama si kecil, temukan kursinya</p>
   </div>
   <div class="search">
     <input id="q" type="search" placeholder="Cari nama anak atau wali…" autocomplete="off">
@@ -343,7 +348,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
 
   /* ---------- util data ---------- */
   function curBus() { return S.buses.find(function (b) { return b.id === S.busId; }); }
-  /* pintu Belakang: sisi kiri pada baris tepat di depan baris paling belakang tidak ada kursi */
+  /* pintu belakang: sisi kiri pada baris tepat di depan baris paling belakang tidak ada kursi */
   function isDoorRow(b, r) { return !!b.pintu && b.baris >= 2 && r === b.baris - 1; }
   function seatsOf(b) {
     var out = [], n = b.kiri + b.kanan;
