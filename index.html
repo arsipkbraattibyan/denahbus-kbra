@@ -480,7 +480,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     for (var r = 1; r <= b.baris; r++) {
       var left = '', right = '', doorRow = isDoorRow(b, r);
       if (doorRow) {
-        left = '<div class="doorseat" style="width:calc(var(--sw) * ' + b.kiri + ' + var(--gap) * ' + (b.kiri - 1) + ')">🚪 Pintu<small>belakang</small></div>';
+        left = '<div class="doorseat" style="width:calc(var(--sw) * ' + b.kiri + ' + var(--gap) * ' + (b.kiri - 1) + ')">🚪 Pintu<small>Belakang</small></div>';
       }
       for (var c = 0; c < b.kiri + b.kanan; c++) {
         var code = r + LETTERS[c];
@@ -491,7 +491,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         '</div><div class="side">' + right + '</div></div>';
     }
     return '<div class="bus-wrap"><div class="bus" style="--cols:' + (b.kiri + b.kanan) + '">' +
-      '<div class="front"><div class="door">🚪 Pintu</div><div class="driver">' + WHEEL + 'Sopir</div></div>' +
+      '<div class="front"><div class="door">🚪 Pintu Depan</div><div class="driver">' + WHEEL + 'Sopir</div></div>' +
       rows + '<div class="back">🚌 Belakang</div></div></div>';
   }
 
