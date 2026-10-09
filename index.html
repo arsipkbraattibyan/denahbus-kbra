@@ -296,6 +296,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   var TUGAS = ['Wali Kelas KB', 'Wali Kelas TK A', 'Wali Kelas TK B'];  // pilihan tugas untuk guru
   /* ========================== */
 
+  var NEED_VER = 6;                         // versi Code.gs yang dibutuhkan halaman ini
   var LETTERS = 'ABCDEF';
   var $ = function (s, el) { return (el || document).querySelector(s); };
   var esc = function (s) {
@@ -347,7 +348,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       api[n] = function () { return rpc(n, Array.prototype.slice.call(arguments)); };
     });
 
-  var S = { buses: [], pnp: [], busId: null, admin: false, pin: '', hl: null, sig: '', loaded: false };
+  var S = { ver: 0, buses: [], pnp: [], busId: null, admin: false, pin: '', hl: null, sig: '', loaded: false };
   var drag = null, hlTimer = null, confirmRes = null;
 
   /* ---------- util data ---------- */
@@ -363,11 +364,11 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     });
     return out.sort(function (a, b) { return a - b; });
   }
-  /* jumlah kursi sisi kiri pada baris r (pintu = 0; baris khusus = 1 atau 2; selain itu = kiri) */
+  /* jumlah kursi sisi kiri pada baris r (baris khusus = 1 atau 2; baris pintu tanpa baris khusus = 0; selain itu = kiri) */
   function leftCount(b, r) {
-    if (isDoorRow(b, r)) return 0;
     var j = Number(b.kiriJumlah);
     if (j >= 1 && j < b.kiri && parseRows(b.kiriBaris).indexOf(r) > -1) return j;
+    if (isDoorRow(b, r)) return 0;
     return b.kiri;
   }
   /* jumlah kursi baris paling belakang (5 atau 6); 0 = sama seperti baris biasa */
@@ -480,9 +481,9 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     opts = opts || {};
     if (!apiReady()) { if (!opts.silent) showSetup(); return Promise.resolve(); }
     return api.getData().then(function (d) {
-      var sig = JSON.stringify([d.buses, d.penumpang]);
+      var sig = JSON.stringify([d.buses, d.penumpang, d.ver]);
       if (opts.silent && sig === S.sig) return;
-      S.sig = sig; S.buses = d.buses; S.pnp = d.penumpang; S.loaded = true;
+      S.ver = Number(d.ver) || 0; S.sig = sig; S.buses = d.buses; S.pnp = d.penumpang; S.loaded = true;
       if (!curBus()) S.busId = S.buses.length ? S.buses[0].id : null;
       render();
     }).catch(function (e) {
@@ -502,6 +503,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       return load();
     }).catch(function (e) {
       toast(e.message, 'err');
+      var fe = $('#formErr'); if (fe) fe.textContent = e.message;
       if (/^PIN salah|^Terlalu banyak/.test(e.message)) { closeModal(); logout(true); }
     }).then(function () { busy(false); });
   }
@@ -530,18 +532,17 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         continue;
       }
       var left = '', right = '', doorRow = isDoorRow(b, r);
-      if (doorRow) {
-        left = '<div class="doorseat" style="width:calc(var(--sw) * ' + b.kiri + ' + var(--gap) * ' + (b.kiri - 1) + ')">🚪 Pintu<small>Belakang</small></div>';
-      }
       var lc = leftCount(b, r), cut = b.kiri - lc;
       for (var c = 0; c < b.kiri + b.kanan; c++) {
         var code = r + LETTERS[c];
         if (c < b.kiri) { if (c < lc) left += seatHtml(code, m[code]); }
         else right += seatHtml(code, m[code]);
       }
-      /* kursi tetap di sisi kiri (jendela), ruang kosong di dekat lorong */
-      if (!doorRow && cut > 0) {
-        left += '<div style="width:calc(var(--sw) * ' + cut + ' + var(--gap) * ' + (cut - 1) + ')"></div>';
+      /* kursi tetap di sisi kiri (jendela); sisanya dekat lorong: kotak pintu atau ruang kosong */
+      if (cut > 0) {
+        var w = 'width:calc(var(--sw) * ' + cut + ' + var(--gap) * ' + (cut - 1) + ')';
+        left += doorRow ? '<div class="doorseat" style="' + w + '">🚪 Pintu<small>Belakang</small></div>'
+                        : '<div style="' + w + '"></div>';
       }
       rows += '<div class="brow"><div class="side">' + left + '</div><div class="aisle">' + r +
         '</div><div class="side">' + right + '</div></div>';
@@ -556,8 +557,13 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     app.className = S.admin ? 'admin' : '';
 
     var toolbar = '';
+    if (S.admin && S.ver < NEED_VER) {
+      toolbar += '<div class="err no-print" style="background:#ffe3ea;border:2px solid var(--danger);border-radius:18px;padding:12px 16px;margin:8px 0">' +
+        '⚠️ Kode Google Apps Script belum versi terbaru, jadi pengaturan baru (kursi belakang, pintu, kursi kiri) tidak akan tersimpan. ' +
+        'Buka Apps Script → Deploy → Kelola deployment → ikon pensil → Versi: <b>Versi baru</b> → Deploy.</div>';
+    }
     if (S.admin) {
-      toolbar = '<div class="admin-bar no-print"><div class="hint"><b>Mode Guru aktif.</b> ' +
+      toolbar += '<div class="admin-bar no-print"><div class="hint"><b>Mode Guru aktif.</b> ' +
         'Klik kursi untuk mengisi atau mengubah. Seret kursi terisi ke kursi lain untuk memindahkan atau menukar.</div>' +
         '<div class="grp"><button class="btn primary small" data-act="addBus">＋ Tambah Bus</button>' +
         (curBus() ? '<button class="btn tint small" data-act="editBus">✏️ Atur Bus</button>' : '') +
@@ -717,6 +723,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         '<label>Kursi kiri<select name="kiriJumlah"><option value="1"' + (kj === 1 ? ' selected' : '') + '>1 kursi</option>' +
         '<option value="2"' + (kj === 2 ? ' selected' : '') + '>2 kursi</option></select></label></div>' +
       '<label>Keterangan<input type="text" name="ket" maxlength="120" value="' + esc(b.ket) + '" placeholder="Rute Timur · berangkat 06.30"></label>' +
+      '<div class="err" id="formErr"></div>' +
       '<div class="actions">' + (editing ? '<button type="button" class="btn ghost left" style="color:var(--danger)" data-act="delBus">Hapus bus</button>' : '') +
       '<button type="button" class="btn ghost" data-close>Batal</button><button class="btn primary">Simpan</button></div></form>');
   }
