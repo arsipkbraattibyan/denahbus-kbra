@@ -354,11 +354,20 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   function curBus() { return S.buses.find(function (b) { return b.id === S.busId; }); }
   /* pintu belakang: pada baris yang dipilih, sisi kiri tidak ada kursi (diganti kotak pintu) */
   function isDoorRow(b, r) { return Number(b.pintuBaris) === r && r <= b.baris; }
+  /* "1, 9" -> [1, 9] (angka unik, urut) */
+  function parseRows(v) {
+    var seen = {}, out = [];
+    String(v == null ? '' : v).split(/[^0-9]+/).forEach(function (x) {
+      var n = parseInt(x, 10);
+      if (n >= 1 && !seen[n]) { seen[n] = 1; out.push(n); }
+    });
+    return out.sort(function (a, b) { return a - b; });
+  }
   /* jumlah kursi sisi kiri pada baris r (pintu = 0; baris khusus = 1 atau 2; selain itu = kiri) */
   function leftCount(b, r) {
     if (isDoorRow(b, r)) return 0;
     var j = Number(b.kiriJumlah);
-    if (Number(b.kiriBaris) === r && j >= 1 && j < b.kiri) return j;
+    if (j >= 1 && j < b.kiri && parseRows(b.kiriBaris).indexOf(r) > -1) return j;
     return b.kiri;
   }
   /* jumlah kursi baris paling belakang (5 atau 6); 0 = sama seperti baris biasa */
@@ -689,9 +698,9 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   }
 
   function openBusForm(editing) {
-    var b = editing ? curBus() : { nama: '', baris: 10, kiri: 2, kanan: 2, ket: '', pintuBaris: 9, belakang: 0, kiriBaris: 0, kiriJumlah: 1 };
+    var b = editing ? curBus() : { nama: '', baris: 10, kiri: 2, kanan: 2, ket: '', pintuBaris: 9, belakang: 0, kiriBaris: '', kiriJumlah: 1 };
     var bel = Number(b.belakang) || 0, pb = Number(b.pintuBaris) || 0;
-    var kb = Number(b.kiriBaris) || 0, kj = Number(b.kiriJumlah) === 2 ? 2 : 1;
+    var kb = parseRows(b.kiriBaris).join(', '), kj = Number(b.kiriJumlah) === 2 ? 2 : 1;
     modal('<h3>' + (editing ? '✏️ Atur Bus' : '🚌 Tambah Bus') + '</h3>' +
       '<form id="fBus" data-id="' + (editing ? esc(b.id) : '') + '">' +
       '<label>Nama bus<input type="text" name="nama" required maxlength="40" value="' + esc(b.nama) + '" placeholder="Bus 1"></label>' +
@@ -704,7 +713,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         '<option value="6"' + (bel === 6 ? ' selected' : '') + '>6 kursi</option></select></label>' +
       '<label>Pintu belakang (sisi kiri)<select name="pintuBaris" id="selPintu">' + pintuOpts(Number(b.baris) || 1, pb) + '</select></label>' +
       '<div style="display:grid;grid-template-columns:3fr 2fr;gap:10px">' +
-        '<label>Baris dengan kursi kiri berkurang<select name="kiriBaris" id="selKiri">' + pintuOpts(Number(b.baris) || 1, kb).replace('Tidak ada pintu belakang', 'Tidak ada') + '</select></label>' +
+        '<label>Baris dengan kursi kiri berkurang<input type="text" name="kiriBaris" maxlength="80" autocomplete="off" inputmode="numeric" value="' + esc(kb) + '" placeholder="mis. 1, 9 (kosongkan jika tidak ada)"></label>' +
         '<label>Kursi kiri<select name="kiriJumlah"><option value="1"' + (kj === 1 ? ' selected' : '') + '>1 kursi</option>' +
         '<option value="2"' + (kj === 2 ? ' selected' : '') + '>2 kursi</option></select></label></div>' +
       '<label>Keterangan<input type="text" name="ket" maxlength="120" value="' + esc(b.ket) + '" placeholder="Rute Timur · berangkat 06.30"></label>' +
@@ -762,8 +771,6 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       var sel = $('#selPintu'), n = Math.max(1, Math.min(25, parseInt(e.target.value, 10) || 1));
       var v = Number(sel.value);
       sel.innerHTML = pintuOpts(n, v <= n ? v : 0);
-      var sk = $('#selKiri'), vk = Number(sk.value);
-      sk.innerHTML = pintuOpts(n, vk <= n ? vk : 0).replace('Tidak ada pintu belakang', 'Tidak ada');
     }
   });
   modalEl.addEventListener('submit', function (e) {
@@ -791,7 +798,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         return api.saveBus(S.pin, {
           id: id || '', nama: d.get('nama'), baris: Number(d.get('baris')),
           kiri: Number(d.get('kiri')), kanan: Number(d.get('kanan')), belakang: Number(d.get('belakang')), ket: d.get('ket'),
-          pintuBaris: Number(d.get('pintuBaris')), kiriBaris: Number(d.get('kiriBaris')), kiriJumlah: Number(d.get('kiriJumlah'))
+          pintuBaris: Number(d.get('pintuBaris')), kiriBaris: d.get('kiriBaris'), kiriJumlah: Number(d.get('kiriJumlah'))
         }).then(function (newId) { if (!id) S.busId = newId; });
       }, 'Bus tersimpan ✓');
     } else if (f.id === 'fPin') {
