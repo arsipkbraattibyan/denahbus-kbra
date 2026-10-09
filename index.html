@@ -49,7 +49,7 @@ button,input,select{font:inherit;color:inherit}
 .logo{grid-area:logo;width:96px;height:96px;border-radius:50%;background:#fff;border:4px solid #fff;display:grid;place-items:center;font-size:48px;box-shadow:0 10px 22px -8px rgba(91,61,245,.5);overflow:hidden;padding:4px}
 .logo img{width:100%;height:100%;object-fit:contain;display:block;border-radius:50%}
 .titles{grid-area:titles;min-width:0}
-.titles h1{font-size:clamp(17px,3.6vw,40px);margin:0;font-weight:700;letter-spacing:-.01em;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.titles h1{min-height:1.1em;font-size:clamp(17px,3.6vw,40px);margin:0;font-weight:700;letter-spacing:-.01em;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .titles p{margin:6px 0 0;font-size:14.5px;font-weight:700;color:#5d5688;line-height:1.35}
 .titles p.tagline{margin-top:2px;font-weight:600;color:#7a75a0}
 #adminBtn{grid-area:btn;padding:12px 22px}
@@ -313,7 +313,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   <span class="deco d1">☁️</span><span class="deco d2">⭐</span><span class="deco d3">🎈</span>
   <div class="logo"><img src="logo.png" alt="Logo KB RA At Tibyan" onerror="this.replaceWith(document.createTextNode('🐥'))"></div>
   <div class="titles">
-    <h1 id="title">Denah Bus Outbound 2026</h1>
+    <h1 id="title"></h1>
     <p id="school">KB RA At Tibyan</p>
     <p id="tagline" class="tagline">cari nama si kecil, temukan kursinya</p>
   </div>
@@ -403,6 +403,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     $('#title').textContent = t;
     document.title = t + ' · ' + SCHOOL_NAME;
   }
+  /* simpan judul terakhir di HP/komputer ini, agar langsung tampil benar saat halaman dibuka lagi */
+  function cacheJudul() { try { localStorage.setItem('denah_judul', S.judul); } catch (x) { /* abaikan */ } }
   function curBus() { return S.buses.find(function (b) { return b.id === S.busId; }); }
   /* pintu belakang: pada baris yang dipilih, sisi kiri tidak ada kursi (diganti kotak pintu) */
   function isDoorRow(b, r) { return Number(b.pintuBaris) === r && r <= b.baris; }
@@ -530,15 +532,16 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
 
   function load(opts) {
     opts = opts || {};
-    if (!apiReady()) { if (!opts.silent) showSetup(); return Promise.resolve(); }
+    if (!apiReady()) { if (!opts.silent) { applyTitle(); showSetup(); } return Promise.resolve(); }
     return api.getData().then(function (d) {
       var sig = JSON.stringify([d.buses, d.penumpang, d.ver, d.judul]);
       if (opts.silent && sig === S.sig) return;
-      S.ver = Number(d.ver) || 0; S.judul = String(d.judul || ''); applyTitle(); S.sig = sig; S.buses = d.buses; S.pnp = d.penumpang; S.loaded = true;
+      S.ver = Number(d.ver) || 0; S.judul = String(d.judul || ''); applyTitle(); cacheJudul(); S.sig = sig; S.buses = d.buses; S.pnp = d.penumpang; S.loaded = true;
       if (!curBus()) S.busId = S.buses.length ? S.buses[0].id : null;
       render();
     }).catch(function (e) {
       if (opts.silent) return;
+      if (!$('#title').textContent) applyTitle();      // gagal memuat & belum ada judul: pakai judul bawaan
       if (S.loaded) toast(e.message, 'err');
       else $('#app').innerHTML = '<div class="empty-state"><div class="big">😿</div><h2>Denah belum bisa dibuka</h2><p>' +
         esc(e.message) + '</p><button class="btn primary" data-act="retry">Coba lagi</button></div>';
@@ -1110,7 +1113,10 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   });
 
   /* ---------- mulai ---------- */
-  applyTitle();
+  try {                                   // judul tersimpan dari kunjungan sebelumnya (tanpa menunggu server)
+    var cj = localStorage.getItem('denah_judul');
+    if (cj !== null) { S.judul = cj; applyTitle(); }
+  } catch (x) { /* abaikan */ }
   $('#school').textContent = SCHOOL_NAME;
   $('#ver').textContent = 'Created by : Furqon';
   updateHeader();
