@@ -254,7 +254,50 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   .stat-big b{font-size:34px}
 }
 
+
+/* ===== hasil cetak / PDF (1 lembar) ===== */
+#printRoot{display:none}
+.ex-root{width:900px;background:#fff;color:var(--text);font-family:'Nunito',system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.ex-head{display:flex;align-items:center;gap:16px;padding-bottom:10px;margin-bottom:12px;border-bottom:4px solid var(--sun)}
+.ex-logo{width:64px;height:64px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;overflow:hidden;flex:0 0 auto;background:#fff}
+.ex-logo img{width:100%;height:100%;object-fit:contain;display:block}
+.ex-head h1{font-size:28px;margin:0;line-height:1.1;font-weight:700}
+.ex-head p{margin:3px 0 0;font-size:13px;font-weight:700;color:#5d5688}
+.ex-head .ex-date{margin-left:auto;text-align:right;font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap}
+.ex-body{display:flex;gap:18px;align-items:flex-start}
+.ex-bus{flex:0 0 auto}
+.ex-side{flex:1 1 0;min-width:0}
+.ex-bname{margin:0 0 2px;font-size:20px;font-weight:700;font-family:'Fredoka','Nunito',sans-serif}
+.ex-ket{margin:0 0 8px;font-size:12px;font-weight:700;color:var(--muted)}
+.ex-stats{font-size:12px;font-weight:800;margin:8px 0 6px}
+.ex-item{display:flex;gap:8px;align-items:baseline;padding:3px 0;border-bottom:1px solid var(--line);font-size:11.5px;line-height:1.3}
+.ex-item .badge{min-width:34px;font-size:10.5px;padding:2px 4px;flex:0 0 auto}
+.ex-item small{color:var(--muted);font-weight:600}
+/* ukuran bus tetap seperti di layar lebar, walau dibuka dari HP */
+.ex-root .bus-wrap{overflow:visible;padding:14px}
+.ex-root .bus{--sw:70px;padding:16px 22px 18px;border-width:5px;border-radius:60px 60px 24px 24px}
+.ex-root .bus::before{left:-13px;width:12px}
+.ex-root .bus::after{right:-13px;width:12px}
+.ex-root .side{--gap:8px}
+.ex-root .brow{gap:8px;margin-bottom:16px}
+.ex-root .aisle{width:34px;font-size:13px}
+.ex-root .seat{height:68px;cursor:default}
+.ex-root .seat:not(.empty){border-radius:20px 20px 16px 16px;border-width:3px}
+.ex-root .seat::before{top:-8px;height:10px}
+.ex-root .seat .code{font-size:10.5px}
+.ex-root .seat .name{font-size:11.5px;padding:0 4px}
+.ex-root .seat .full{display:inline}
+.ex-root .seat .short{display:none}
+.ex-root .front{gap:16px;padding:6px 8px 14px}
+.ex-root .driver,.ex-root .door{padding:7px 14px;font-size:12.5px}
+.ex-root .doorseat{height:68px;border-radius:20px 20px 16px 16px;border-width:3px;font-size:12.5px}
+.ex-page{position:relative;overflow:hidden;background:#fff}
+
 @media print{
+  body.printing{background:#fff}
+  body.printing > *:not(#printRoot){display:none!important}
+  body.printing #printRoot{display:block!important}
+  #printRoot,#printRoot *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   body{background:#fff}
   .no-print,.admin-bar,.tabs,#toast,#modal,#bar{display:none!important}
   .grid{grid-template-columns:1fr}
@@ -577,6 +620,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         (curBus() ? '<button class="btn tint small" data-act="editBus">✏️ Atur Bus</button>' : '') +
         '<button class="btn tint small" data-act="judul">📝 Ubah Judul</button>' +
         '<button class="btn ghost small" data-act="print">🖨️ Cetak</button>' +
+        '<button class="btn ghost small" data-act="pdf">📄 Simpan PDF</button>' +
         '<button class="btn ghost small" data-act="pin">🔑 Ganti PIN</button></div></div>';
     }
 
@@ -746,6 +790,144 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       '<button type="button" class="btn ghost" data-close>Batal</button><button class="btn primary">Simpan</button></div></form>');
   }
 
+  /* ---------- cetak & PDF (1 lembar A4 / F4) ---------- */
+  var PAPERS = { A4: { w: 210, h: 297 }, F4: { w: 215, h: 330 } };   // ukuran dalam mm
+  var EX_W = 900;                                                    // lebar isi (px) sebelum diperkecil
+  var paperPick = 'A4';
+  try { var pk = localStorage.getItem('denah_kertas'); if (PAPERS[pk]) paperPick = pk; } catch (x) { /* abaikan */ }
+
+  function openExportDialog(mode) {
+    var b = curBus();
+    if (!b) { toast('Belum ada bus untuk dicetak', 'err'); return; }
+    var pdf = mode === 'pdf';
+    modal('<h3>' + (pdf ? '📄 Simpan PDF' : '🖨️ Cetak') + '</h3>' +
+      '<p class="muted">' + esc(b.nama) + ' · seluruh denah dimuat dalam 1 lembar. Pilih ukuran kertas:</p>' +
+      '<div class="seg" style="grid-template-columns:1fr 1fr">' +
+      '<label><input type="radio" name="kertas" value="A4"' + (paperPick === 'A4' ? ' checked' : '') + '><span>A4<br><small>210 × 297 mm</small></span></label>' +
+      '<label><input type="radio" name="kertas" value="F4"' + (paperPick === 'F4' ? ' checked' : '') + '><span>F4<br><small>215 × 330 mm</small></span></label></div>' +
+      '<div class="actions"><button type="button" class="btn ghost" data-close>Batal</button>' +
+      '<button type="button" class="btn primary" data-act="' + (pdf ? 'doPdf' : 'doPrint') + '">' + (pdf ? 'Simpan PDF' : 'Cetak') + '</button></div>');
+  }
+
+  /* isi halaman cetak: judul, denah bus, dan daftar penumpang */
+  function exportHtml() {
+    var b = curBus(), m = paxMap(b.id);
+    var list = S.pnp.filter(function (p) { return p.busId === b.id; })
+      .sort(function (x, y) { return seatKey(x.kursi) - seatKey(y.kursi); });
+    var cnt = function (t) { return list.filter(function (p) { return p.tipe === t; }).length; };
+    var total = seatsOf(b).length;
+    var keepA = S.admin, keepH = S.hl;
+    S.admin = false; S.hl = null;                      // tampilan bersih: tanpa tombol "+ Isi"
+    var bus = busHtml(b, m);
+    S.admin = keepA; S.hl = keepH;
+    var title = S.judul || ('Denah Bus ' + EVENT_NAME);
+    var tgl = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    var items = list.length ? list.map(function (p) {
+      return '<div class="ex-item"><span class="badge ' + tipeCls(p.tipe) + '">' + esc(p.kursi) + '</span>' +
+        '<span><b>' + esc(p.nama) + '</b> <small>' + descOf(p) + '</small></span></div>';
+    }).join('') : '<div class="muted" style="font-size:12px">Belum ada penumpang.</div>';
+    return '<div class="ex-root">' +
+      '<div class="ex-head"><div class="ex-logo"><img src="logo.png" alt="" onerror="this.style.display=\'none\'"></div>' +
+      '<div><h1>' + esc(title) + '</h1><p>' + esc(SCHOOL_NAME) + '</p></div>' +
+      '<div class="ex-date">Dicetak: ' + esc(tgl) + '</div></div>' +
+      '<div class="ex-body"><div class="ex-bus">' + bus + '</div>' +
+      '<div class="ex-side"><h2 class="ex-bname">' + esc(b.nama) + '</h2>' +
+      (b.ket ? '<p class="ex-ket">' + esc(b.ket) + '</p>' : '') +
+      '<div class="legend"><span><i class="l-anak"></i>Anak</span><span><i class="l-wali"></i>Wali</span><span><i class="l-guru"></i>Guru</span><span><i class="l-empty"></i>Kosong</span></div>' +
+      '<div class="ex-stats">' + list.length + ' / ' + total + ' kursi terisi · Anak ' + cnt('Anak') + ' · Wali ' + cnt('Wali') + ' · Guru ' + cnt('Guru') + '</div>' +
+      items + '</div></div></div>';
+  }
+
+  function mmPx(mm) { return mm * 96 / 25.4; }
+
+  function waitImgs(root) {
+    var jobs = Array.prototype.map.call(root.querySelectorAll('img'), function (im) {
+      return im.complete ? null : new Promise(function (ok) {
+        im.addEventListener('load', ok); im.addEventListener('error', ok);
+      });
+    }).filter(Boolean);
+    return Promise.all(jobs);
+  }
+
+  /* CETAK: ukuran kertas diatur lewat @page, isi diperkecil otomatis agar muat 1 lembar */
+  function exportPrint(k) {
+    var P = PAPERS[k], MG = 10;                                   // margin 10 mm
+    var probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;left:-20000px;top:0';
+    probe.innerHTML = exportHtml();
+    document.body.appendChild(probe);
+    var H = probe.firstChild.offsetHeight;
+    document.body.removeChild(probe);
+    var aw = mmPx(P.w - 2 * MG), ah = mmPx(P.h - 2 * MG - 2);
+    var f = Math.min(1, aw / EX_W, ah / H);
+    var root = $('#printRoot');
+    if (!root) { root = document.createElement('div'); root.id = 'printRoot'; document.body.appendChild(root); }
+    var st = $('#pageStyle');
+    if (!st) { st = document.createElement('style'); st.id = 'pageStyle'; document.head.appendChild(st); }
+    st.textContent = '@page{size:' + P.w + 'mm ' + P.h + 'mm;margin:0}';
+    root.innerHTML = '<div class="ex-page" style="width:' + P.w + 'mm;height:' + (P.h - 1) + 'mm;padding:' + MG + 'mm">' +
+      '<div style="width:' + EX_W + 'px;transform:scale(' + f + ');transform-origin:top left;margin-left:' + ((aw - EX_W * f) / 2) + 'px">' +
+      exportHtml() + '</div></div>';
+    waitImgs(root).then(function () {
+      document.body.classList.add('printing');
+      setTimeout(function () { window.print(); }, 150);
+    });
+  }
+  window.addEventListener('afterprint', function () {
+    document.body.classList.remove('printing');
+    var r = $('#printRoot'); if (r) r.innerHTML = '';
+  });
+
+  /* SIMPAN PDF: dibuat langsung di browser (html2canvas + jsPDF), 1 halaman */
+  function loadScript(url) {
+    return new Promise(function (ok, fail) {
+      var s = document.createElement('script');
+      s.src = url; s.onload = ok; s.onerror = function () { fail(new Error('lib')); };
+      document.head.appendChild(s);
+    });
+  }
+  function loadPdfLibs() {
+    var p = Promise.resolve();
+    if (!window.html2canvas) p = p.then(function () { return loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'); });
+    if (!(window.jspdf && window.jspdf.jsPDF)) p = p.then(function () { return loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'); });
+    return p;
+  }
+  function exportPdf(k) {
+    var P = PAPERS[k], MG = 10, b = curBus(), host = null;
+    busy(true); toast('Membuat PDF…');
+    loadPdfLibs().then(function () {
+      host = document.createElement('div');
+      host.id = 'exCap';
+      host.style.cssText = 'position:fixed;left:-20000px;top:0;width:' + EX_W + 'px;background:#fff';
+      host.innerHTML = exportHtml();
+      document.body.appendChild(host);
+      return waitImgs(host);
+    }).then(function () {
+      return window.html2canvas(host, {
+        scale: 2, backgroundColor: '#ffffff', useCORS: true, windowWidth: 1200, scrollX: 0, scrollY: 0,
+        onclone: function (doc) {
+          var e = doc.getElementById('exCap');
+          if (e) { e.style.left = '0'; e.style.position = 'absolute'; }
+        }
+      });
+    }).then(function (canvas) {
+      var jsPDF = window.jspdf.jsPDF;
+      var pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [P.w, P.h] });
+      var aw = P.w - 2 * MG, ah = P.h - 2 * MG, ratio = canvas.width / canvas.height;
+      var w = aw, h = w / ratio;
+      if (h > ah) { h = ah; w = h * ratio; }
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', (P.w - w) / 2, MG, w, h);
+      var nama = String(b.nama).replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'Bus';
+      pdf.save('Denah-Bus-' + nama + '-' + k + '.pdf');
+      toast('PDF tersimpan ✓');
+    }).catch(function () {
+      toast('PDF gagal dibuat. Coba tombol Cetak lalu pilih "Simpan sebagai PDF".', 'err');
+    }).then(function () {
+      if (host && host.parentNode) host.parentNode.removeChild(host);
+      busy(false);
+    });
+  }
+
   function openPinForm() {
     modal('<h3>🔑 Ganti PIN</h3><p class="muted">PIN dipakai guru untuk masuk. Minimal 4 karakter.</p>' +
       '<form id="fPin"><label>PIN baru<input type="password" name="a" required minlength="4" maxlength="20" autocomplete="off"></label>' +
@@ -768,6 +950,15 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         if (ok) run(function () { return api.removePenumpang(S.pin, S.busId, code); }, 'Kursi dikosongkan');
         else openSeatForm(code);
       });
+    }
+    if (act.dataset.act === 'doPdf' || act.dataset.act === 'doPrint') {
+      var chosen = modalEl.querySelector('input[name=kertas]:checked');
+      var kk = chosen && PAPERS[chosen.value] ? chosen.value : 'A4';
+      paperPick = kk;
+      try { localStorage.setItem('denah_kertas', kk); } catch (x) { /* abaikan */ }
+      closeModal();
+      if (act.dataset.act === 'doPdf') exportPdf(kk); else exportPrint(kk);
+      return;
     }
     if (act.dataset.act === 'judulReset') {
       run(function () { return api.saveJudul(S.pin, ''); }, 'Judul dikembalikan');
@@ -864,7 +1055,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       else if (a === 'editBus') openBusForm(true);
       else if (a === 'judul') openJudulForm();
       else if (a === 'pin') openPinForm();
-      else if (a === 'print') window.print();
+      else if (a === 'print') openExportDialog('print');
+      else if (a === 'pdf') openExportDialog('pdf');
       else if (a === 'retry') { app.innerHTML = '<div class="skeleton"></div>'; load(); }
       else if (a === 'saveApi') {
         var v = ($('#apiInput').value || '').trim();
