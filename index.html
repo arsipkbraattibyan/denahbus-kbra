@@ -245,6 +245,8 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 .skeleton{height:420px;border-radius:28px;background:linear-gradient(90deg,#f1eefc 25%,#fff 50%,#f1eefc 75%);background-size:200% 100%;animation:sh 1.2s infinite}
 @keyframes sh{to{background-position:-200% 0}}
 
+#qpill{position:fixed;left:12px;bottom:72px;z-index:80;background:#fff;border:2px solid var(--sun);color:#7a5400;border-radius:99px;padding:9px 14px;font-weight:800;font-size:12.5px;box-shadow:var(--shadow);cursor:pointer;max-width:calc(100vw - 24px)}
+#qpill[hidden]{display:none}
 #bye{position:fixed;inset:0;z-index:200;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center}
 #bye img{width:140px;height:140px;object-fit:contain}
 #bye h2{margin:0;font-size:22px}
@@ -373,6 +375,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   <div style="margin-top:12px"><span id="ver"></span></div>
 </footer>
 <div id="modal"></div>
+<div id="qpill" class="no-print" hidden role="button" tabindex="0"></div>
 <div id="toast"></div>
 
 <script>
@@ -420,16 +423,21 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if (!apiReady()) {
       return Promise.reject(new Error('API_URL di index.html belum diisi dengan URL Web App (berakhiran /exec).'));
     }
+    var ctl = window.AbortController ? new AbortController() : null;
+    var tm = ctl ? setTimeout(function () { ctl.abort(); }, 25000) : 0;   // sinyal lemah: jangan menunggu selamanya
+    var sg = ctl ? { signal: ctl.signal } : {};
     var req = action === 'getData'
-      ? fetch(API_URL + '?action=getData&_=' + Date.now())
+      ? fetch(API_URL + '?action=getData&_=' + Date.now(), sg)
       : fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: action, args: args })
+          body: JSON.stringify({ action: action, args: args }),
+          signal: sg.signal
         });
     return req
       .catch(function () { throw netError(); })
       .then(function (r) { return r.json().catch(function () { throw netError(); }); })
+      .then(function (v) { clearTimeout(tm); return v; }, function (e) { clearTimeout(tm); throw e; })
       .then(unwrap);
   }
   var api = { getData: function () { return rpc('getData', []); } };
@@ -452,8 +460,14 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   function cacheJudul() { try { localStorage.setItem('denah_judul', S.judul); } catch (x) { /* abaikan */ } }
   /* simpan denah (data publik saja) di perangkat ini agar langsung tampil saat dibuka lagi / tanpa sinyal */
   function cacheData(d) {
-    if (S.admin) return;                 // data guru (HP, catatan) tidak disimpan di perangkat
-    try { localStorage.setItem('denah_data', JSON.stringify(d)); } catch (x) { /* abaikan */ }
+    /* HP & catatan tidak pernah disimpan di perangkat: hanya data publik */
+    var pub = {
+      buses: d.buses, ver: d.ver, judul: d.judul,
+      penumpang: d.penumpang.map(function (p) {
+        return { busId: p.busId, kursi: p.kursi, nama: p.nama, tipe: p.tipe, info: p.info, naik: p.naik };
+      })
+    };
+    try { localStorage.setItem('denah_data', JSON.stringify(pub)); } catch (x) { /* abaikan */ }
   }
   function curBus() { return S.buses.find(function (b) { return b.id === S.busId; }); }
   function isDoorRow(b, r) { return Number(b.pintuBaris) === r && r <= b.baris; }
@@ -590,11 +604,12 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     var b = $('#adminBtn');
     b.textContent = S.admin ? '🔓 Keluar Mode Guru' : '🔒 Masuk Guru';
     b.className = 'btn ' + (S.admin ? 'tint' : 'ghost');
+    updateQ();
   }
   function logout(silent) {
     if (S.tok) { api.logout(S.tok).catch(function () { /* abaikan */ }); }
     S.admin = false; S.tok = ''; S.mode = 'edit'; S.moveFrom = null; S.sig = '';
-    try { sessionStorage.removeItem('denah_tok'); } catch (x) { /* abaikan */ }
+    tokClear();
     updateHeader(); render();
     if (!silent) toast('Anda sudah keluar dari mode guru');
     load({ silent: true, force: true });   // ganti ke data publik (tanpa HP & catatan)
@@ -622,6 +637,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   function applyData(d) {
     S.ver = Number(d.ver) || 0; S.judul = String(d.judul || ''); applyTitle(); cacheJudul();
     S.buses = d.buses; S.pnp = d.penumpang; S.loaded = true;
+    applyQueue();                         // tampilkan absen yang belum terkirim di atas data server
     if (!curBus()) S.busId = S.buses.length ? S.buses[0].id : null;
   }
 
@@ -634,6 +650,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       if (opts.silent && !opts.force && sig === S.sig) return;
       if (S.pending && opts.silent && !opts.force) return;     // jangan menimpa perubahan yang sedang dikirim
       S.sig = sig;
+      S.partial = false;
       applyData(d); cacheData(d);
       render();
       if (S.deep) { var q = S.deep; S.deep = null; deepLink(q); }
@@ -719,8 +736,10 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if (!n) { toast('Belum ada yang ditandai naik'); return; }
     confirmBox('Hapus tanda <b>sudah naik</b> untuk ' + n + ' orang di <b>' + esc(b.nama) + '</b>?', 'Clear Absen').then(function (ok) {
       if (!ok) return;
-      opt(function () { S.pnp.forEach(function (p) { if (p.busId === bid) p.naik = false; }); },
-          function () { return api.clearNaik(S.tok, bid); }, 'Absen direset ✓');
+      S.pnp.forEach(function (p) { if (p.busId === bid) p.naik = false; });
+      S.sig = ''; render();
+      qAdd({ k: 'clear', busId: bid });
+      toast('Absen direset ✓');
     });
   }
   function toggleNaik(code) {
@@ -728,9 +747,9 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if (!p) { toast('Kursi ' + code + ' masih kosong'); return; }
     var val = !p.naik, bid = S.busId;
     if (val) speak(p.nama + ' sudah naik');
-    opt(function () { p.naik = val; },
-        function () { return api.setNaik(S.tok, bid, code, val ? 1 : 0); },
-        val ? '✓ ' + p.nama + ' sudah naik' : 'Batal naik: ' + p.nama);
+    p.naik = val; S.sig = ''; render();
+    qAdd({ k: 'naik', busId: bid, kursi: code, val: val ? 1 : 0 });
+    toast(val ? '✓ ' + p.nama + ' sudah naik' : 'Batal naik: ' + p.nama);
   }
   function moveSeat(from, to) {
     var bid = S.busId;
@@ -786,7 +805,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   var MODE_HINT = {
     edit: 'Ketuk kursi untuk mengisi atau mengubah. Di komputer, seret kursi terisi ke kursi lain.',
     move: 'Ketuk kursi yang ingin dipindah, lalu ketuk kursi tujuan (kursi terisi akan ditukar).',
-    absen: 'Ketuk kursi anak/wali/guru untuk menandai <b>sudah naik</b> (ketuk lagi untuk membatalkan).'
+    absen: 'Ketuk kursi anak/wali/guru untuk menandai <b>sudah naik</b> (ketuk lagi untuk membatalkan). Tetap bisa dipakai tanpa sinyal: data dikirim otomatis saat sinyal kembali.'
   };
 
   function render() {
@@ -1275,11 +1294,11 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       var pin = d.get('pin');
       busy(true);
       api.login(pin).then(function (tok) {
-        S.admin = true; S.tok = tok; S.sig = '';
-        try { sessionStorage.setItem('denah_tok', tok); } catch (x) { /* abaikan */ }
-        try { localStorage.removeItem('denah_data'); } catch (x) { /* abaikan */ }
+        S.admin = true; S.tok = tok; S.sig = ''; S.partial = true;
+        tokSave(tok);
         closeModal(); updateHeader(); render(); toast('Mode guru aktif ✓');
         load({ silent: true, force: true });       // ambil data lengkap (HP & catatan)
+        flushQueue();                              // kirim absen yang tertunda (jika ada)
       }).catch(function (er) {
         var box = $('#err'); if (box) box.textContent = er.message;
       }).then(function () { busy(false); });
@@ -1345,6 +1364,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       var code = t.dataset.seat;
       if (!S.admin) { if (paxMap(S.busId)[code]) openInfo(code); return; }
       if (S.mode === 'absen') { toggleNaik(code); return; }
+      if (S.partial) { toast('Menunggu data lengkap dari server (butuh sinyal)', 'err'); return; }
       if (S.mode === 'move') {
         var key = S.busId + '|' + code;
         if (!S.moveFrom) {
@@ -1422,6 +1442,75 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if (S.admin) logout(); else openLogin();
   });
 
+  /* ---------- sesi guru (tersimpan di HP selama masa berlaku 6 jam) ---------- */
+  function tokSave(t) { try { localStorage.setItem('denah_tok', JSON.stringify({ t: t, at: Date.now() })); } catch (x) { /* abaikan */ } }
+  function tokLoad() {
+    try {
+      var o = JSON.parse(localStorage.getItem('denah_tok') || 'null');
+      if (o && o.t && Date.now() - o.at < 21600000 - 60000) return o.t;
+      localStorage.removeItem('denah_tok');
+    } catch (x) { /* abaikan */ }
+    return '';
+  }
+  function tokClear() {
+    try { localStorage.removeItem('denah_tok'); } catch (x) { /* abaikan */ }
+    try { sessionStorage.removeItem('denah_tok'); } catch (x) { /* abaikan */ }
+  }
+
+  /* ---------- antrean absen (jalan tanpa sinyal, dikirim otomatis saat sinyal kembali) ---------- */
+  var Q = [], flushing = false;
+  try { Q = JSON.parse(localStorage.getItem('denah_queue') || '[]') || []; } catch (x) { Q = []; }
+  function qSave() { try { localStorage.setItem('denah_queue', JSON.stringify(Q)); } catch (x) { /* abaikan */ } }
+  function qAdd(it) {
+    if (it.k === 'naik') {
+      Q = Q.filter(function (x) { return !(x.k === 'naik' && x.busId === it.busId && x.kursi === it.kursi); });
+    }
+    Q.push(it); qSave(); updateQ(); flushQueue();
+  }
+  function applyQueue() {
+    if (!Q.length) return;
+    Q.forEach(function (it) {
+      S.pnp.forEach(function (p) {
+        if (p.busId !== it.busId) return;
+        if (it.k === 'clear') p.naik = false;
+        else if (p.kursi === it.kursi) p.naik = !!it.val;
+      });
+    });
+  }
+  function updateQ() {
+    var el = $('#qpill');
+    if (!el) return;
+    if (!Q.length || !S.admin) { el.hidden = true; return; }
+    el.hidden = false;
+    el.textContent = (navigator.onLine === false ? '📴 Offline · ' : '⏳ ') + Q.length + ' absen menunggu dikirim';
+  }
+  function flushQueue() {
+    if (flushing || !Q.length || !S.admin || !S.tok || navigator.onLine === false) return Promise.resolve();
+    flushing = true; busy(true);
+    var failed = 0, stop = false;
+    function step() {
+      if (!Q.length || stop) return Promise.resolve();
+      var it = Q[0];
+      var call = it.k === 'clear' ? api.clearNaik(S.tok, it.busId) : api.setNaik(S.tok, it.busId, it.kursi, it.val);
+      return call.then(function () {
+        Q.shift(); qSave(); updateQ(); return step();
+      }, function (e) {
+        if (/^Tidak bisa terhubung/.test(e.message)) { stop = true; return; }          // belum ada sinyal: coba lagi nanti
+        if (AUTH_RE.test(e.message)) {                                                // sesi habis: antrean tetap disimpan
+          stop = true; authFail(e);
+          toast('Sesi guru berakhir. Masuk lagi untuk mengirim ' + Q.length + ' absen tertunda.', 'err');
+          return;
+        }
+        Q.shift(); qSave(); updateQ(); failed++; return step();                       // ditolak server (mis. kursi sudah kosong): buang
+      });
+    }
+    return step().then(function () {
+      flushing = false; busy(false); updateQ();
+      if (failed) toast(failed + ' perubahan absen ditolak server', 'err');
+      if (!Q.length && S.admin) return load({ force: true, silent: true });
+    });
+  }
+
   /* ---------- salam pembuka (salam.mp3) ---------- */
   function salamDone() { try { sessionStorage.setItem('denah_salam', '1'); } catch (x) { /* abaikan */ } }
   function salam() {
@@ -1464,7 +1553,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (x) { /* abaikan */ }
       if (S.tok) { api.logout(S.tok).catch(function () { /* abaikan */ }); }
       S.admin = false; S.tok = '';
-      try { sessionStorage.removeItem('denah_tok'); sessionStorage.removeItem('denah_salam'); } catch (x) { /* abaikan */ }
+      tokClear();
+      try { sessionStorage.removeItem('denah_salam'); } catch (x) { /* abaikan */ }
       try { window.close(); } catch (x) { /* abaikan */ }
       setTimeout(showBye, 350);                          // jika browser tidak mengizinkan menutup sendiri
     });
@@ -1477,15 +1567,11 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if (cj !== null) { S.judul = cj; applyTitle(); }
   } catch (x) { /* abaikan */ }
   try { S.suara = localStorage.getItem('denah_suara') !== '0'; } catch (x) { /* abaikan */ }
-  try {                                   // sesi guru masih berlaku selama tab belum ditutup
-    var tk = sessionStorage.getItem('denah_tok');
-    if (tk) { S.admin = true; S.tok = tk; }
-  } catch (x) { /* abaikan */ }
+  var tk = tokLoad();                     // sesi guru berlaku sampai habis masa 6 jam (juga saat aplikasi dibuka tanpa sinyal)
+  if (tk) { S.admin = true; S.tok = tk; S.partial = true; }
   try {                                   // tampilkan denah tersimpan dulu (instan), lalu perbarui dari server
-    if (!S.admin) {
-      var cd = JSON.parse(localStorage.getItem('denah_data') || 'null');
-      if (cd && cd.buses && cd.penumpang) { applyData(cd); render(); }
-    }
+    var cd = JSON.parse(localStorage.getItem('denah_data') || 'null');
+    if (cd && cd.buses && cd.penumpang) { applyData(cd); render(); }
   } catch (x) { /* abaikan */ }
   try { S.deep = new URLSearchParams(location.search).get('cari'); } catch (x) { /* abaikan */ }
   $('#school').textContent = SCHOOL_NAME;
@@ -1493,6 +1579,13 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   updateHeader();
   salam();
   load({ force: true });
+  flushQueue();
+  setInterval(flushQueue, 20000);
+  window.addEventListener('online', function () { updateQ(); flushQueue(); });
+  window.addEventListener('offline', updateQ);
+  $('#qpill').addEventListener('click', function () {
+    if (navigator.onLine === false) toast('Belum ada sinyal. Data tersimpan di HP.', 'err'); else flushQueue();
+  });
   setInterval(function () {
     if (document.hidden || modalEl.classList.contains('open') || drag || S.pending) return;
     load({ silent: true });
