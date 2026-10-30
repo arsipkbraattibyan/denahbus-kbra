@@ -45,6 +45,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 #bar.on{width:80%}
 
 /* ===== header ===== */
+.topline{width:calc(100% - 24px);max-width:1156px;margin:10px auto 0;display:flex;justify-content:flex-end}
+.topline + .top{margin-top:8px}
 .top{position:relative;z-index:20;overflow:visible;width:calc(100% - 24px);max-width:1156px;margin:14px auto 8px;padding:18px 20px;border-radius:30px;
   background:linear-gradient(115deg,#dff3ff 0%,#fff3d1 55%,#ffe2ee 100%);border:3px solid #fff;box-shadow:var(--shadow);
   display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:'logo titles btn' 'search search search';gap:14px 22px;align-items:center}
@@ -390,6 +392,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
 <body>
 <div id="bar"></div>
 
+<div class="topline no-print"><button id="exitBtn" class="btn ghost small" type="button">🚪 Keluar Aplikasi</button></div>
 <header class="top no-print">
   <span class="deco d1">☁️</span><span class="deco d2">⭐</span><span class="deco d3">🎈</span>
   <div class="logo"><img src="logo.png" alt="Logo KB RA At Tibyan" width="96" height="96" onerror="this.replaceWith(document.createTextNode('🐥'))"></div>
@@ -407,8 +410,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
 
 <main id="app"><div class="skeleton"></div></main>
 <footer class="foot no-print">
-  <button id="exitBtn" class="btn ghost small" type="button">🚪 Keluar Aplikasi</button>
-  <div style="margin-top:12px"><span id="ver"></span></div>
+  <span id="ver"></span>
 </footer>
 <div id="modal"></div>
 <div id="qpill" class="no-print" hidden role="button" tabindex="0"></div>
