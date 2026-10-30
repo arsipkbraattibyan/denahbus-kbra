@@ -197,7 +197,15 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 /* ===== dialog ===== */
 #modal{position:fixed;inset:0;background:rgba(43,35,80,.5);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:16px;z-index:60}
 #modal.open{display:flex}
-.sheet{background:#fff;border-radius:28px;padding:24px;width:min(450px,100%);max-height:92vh;overflow:auto;box-shadow:0 30px 60px -20px rgba(0,0,0,.45);animation:pop .2s ease-out}
+.ac{position:relative}
+.ac::after{content:'▾';position:absolute;right:14px;top:calc(50% + 3px);transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:14px}
+.ac input{padding-right:34px!important}
+.ac-list{position:absolute;left:0;right:0;top:calc(100% + 4px);background:#fff;border:2px solid var(--line2);border-radius:14px;box-shadow:0 14px 28px -12px rgba(43,35,80,.35);max-height:190px;overflow:auto;z-index:10}
+.ac-item{padding:10px 14px;font-weight:700;font-size:14px;cursor:pointer;background:#fff;border-bottom:1px solid var(--line)}
+.ac-item:last-child{border-bottom:0}
+.ac-item:hover,.ac-item:active{background:var(--primary-soft)}
+.ac-none{padding:10px 14px;font-size:13px;font-weight:700;color:var(--muted);background:#fff}
+.sheet{background:#fff;border-radius:28px;padding:24px;width:min(450px,100%);max-height:100%;overflow:auto;box-shadow:0 30px 60px -20px rgba(0,0,0,.45);animation:pop .2s ease-out}
 @keyframes pop{from{transform:scale(.94);opacity:0}to{transform:none;opacity:1}}
 .sheet h3{margin:0 0 6px;font-size:20px;font-weight:600;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .sheet p{margin:0 0 12px;font-size:14px;font-weight:600}
@@ -523,9 +531,40 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     var m = $('#modal');
     m.innerHTML = '<div class="sheet" role="dialog" aria-modal="true">' + html + '</div>';
     m.classList.add('open');
+    fitModal();
     var f = m.querySelector('input:not([type=radio]):not([type=checkbox]),select,textarea,button');
-    if (f) setTimeout(function () { f.focus(); }, 60);
+    if (f) setTimeout(function () { f.focus(); fitModal(); }, 60);
   }
+  /* dialog selalu berada di area yang terlihat (di atas keyboard HP), terletak di tengah antara batas atas dan keyboard */
+  function fitModal() {
+    var m = $('#modal'), vv = window.visualViewport;
+    if (!vv) return;
+    m.style.top = vv.offsetTop + 'px';
+    m.style.bottom = 'auto';
+    m.style.height = vv.height + 'px';
+    var a = document.activeElement;
+    if (m.classList.contains('open') && a && m.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)) {
+      setTimeout(function () { try { a.scrollIntoView({ block: 'nearest' }); } catch (x) { /* abaikan */ } }, 50);
+    }
+  }
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', fitModal);
+    window.visualViewport.addEventListener('scroll', fitModal);
+  }
+
+  /* daftar nama anak (untuk kolom "Wali dari"): kotak ketik + daftar turun berlatar putih */
+  var acNames = [];
+  function acRender(q) {
+    var box = $('#acList');
+    if (!box) return;
+    q = String(q || '').trim().toLowerCase();
+    var hits = acNames.filter(function (n) { return !q || n.toLowerCase().indexOf(q) > -1; });
+    box.innerHTML = hits.length
+      ? hits.map(function (n) { return '<div class="ac-item" data-v="' + esc(n) + '">' + esc(n) + '</div>'; }).join('')
+      : '<div class="ac-none">Nama anak tidak ditemukan</div>';
+    box.hidden = false;
+  }
+  function acHide() { var box = $('#acList'); if (box) box.hidden = true; }
   function closeModal() {
     if (confirmRes) { var r = confirmRes; confirmRes = null; r(false); }
     var m = $('#modal');
@@ -896,8 +935,9 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   function openSeatForm(code) {
     var b = curBus(), m = paxMap(b.id), p = m[code];
     var all = seatsOf(b);
-    var names = S.pnp.filter(function (x) { return x.busId === b.id && x.tipe === 'Anak'; })
-      .map(function (x) { return '<option value="' + esc(x.nama) + '">'; }).join('');
+    acNames = S.pnp.filter(function (x) { return x.busId === b.id && x.tipe === 'Anak'; })
+      .map(function (x) { return x.nama; })
+      .sort(function (x, y) { return x.localeCompare(y); });
     var tipe = p ? p.tipe : 'Anak';
     var isAnak = tipe === 'Anak', isGuru = tipe === 'Guru', isWali = tipe === 'Wali';
     var contact = (p && p.hp) ? '<div class="contact"><a class="btn tint small" href="tel:' + esc(p.hp) + '">📞 Telepon</a>' +
@@ -916,9 +956,9 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       '<select name="info" required' + (isGuru ? '' : ' disabled') + '>' +
         tugasOpts(p && p.tipe === 'Guru' ? p.info : '') + '</select></label>' +
       '<label id="lblInfo"' + (isWali ? '' : ' hidden') + '><span id="infoLbl">' + infoLabel(tipe) + '</span>' +
-      '<input type="text" name="info" maxlength="60" autocomplete="off" list="dlAnak"' +
-        (isWali ? '' : ' disabled') + ' value="' + esc(p && p.tipe === 'Wali' ? p.info : '') + '"></label>' +
-      '<datalist id="dlAnak">' + names + '</datalist>' +
+      '<div class="ac"><input type="text" name="info" maxlength="60" autocomplete="off" placeholder="Ketik atau pilih nama anak"' +
+        (isWali ? '' : ' disabled') + ' value="' + esc(p && p.tipe === 'Wali' ? p.info : '') + '">' +
+      '<div class="ac-list" id="acList" hidden></div></div></label>' +
       '<label>Nomor HP (untuk menghubungi)<input type="tel" name="hp" maxlength="16" inputmode="tel" autocomplete="off" placeholder="08xxxxxxxxxx" value="' + esc(p ? p.hp : '') + '"></label>' +
       '<label>Catatan (alergi, mudah mabuk, dll.)<input type="text" name="catatan" maxlength="120" autocomplete="off" value="' + esc(p ? p.catatan : '') + '"></label>' +
       '<label>Kursi<select name="kursi">' + all.map(function (s) {
@@ -1138,7 +1178,23 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
 
   /* ---------- event: dialog ---------- */
   var modalEl = $('#modal');
+  modalEl.addEventListener('mousedown', function (e) {
+    if (e.target.closest('.ac-item')) e.preventDefault();       // jaga fokus tetap di kotak ketik
+  });
+  modalEl.addEventListener('focusin', function (e) {
+    if (e.target.closest && e.target.closest('.ac') && e.target.name === 'info') acRender(e.target.value);
+    else acHide();
+  });
   modalEl.addEventListener('click', function (e) {
+    var it = e.target.closest('.ac-item');
+    if (it) {
+      var inp = modalEl.querySelector('.ac input[name=info]');
+      if (inp) inp.value = it.dataset.v;
+      acHide();
+      return;
+    }
+    if (e.target.closest('.ac input')) { acRender(e.target.value); return; }
+    if (!e.target.closest('.ac')) acHide();
     if (e.target === modalEl || e.target.closest('[data-close]')) { closeModal(); return; }
     var r = e.target.closest('[data-r]');
     if (r && confirmRes) { var fn = confirmRes; confirmRes = null; closeModal(); fn(r.dataset.r === '1'); return; }
@@ -1196,6 +1252,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     }
   });
   modalEl.addEventListener('input', function (e) {
+    if (e.target.name === 'info' && e.target.closest('.ac')) { acRender(e.target.value); return; }
     if (e.target.name === 'baris') {
       var sel = $('#selPintu'), n = Math.max(1, Math.min(25, parseInt(e.target.value, 10) || 1));
       var v = Number(sel.value);
@@ -1372,7 +1429,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   } catch (x) { /* abaikan */ }
   try { S.deep = new URLSearchParams(location.search).get('cari'); } catch (x) { /* abaikan */ }
   $('#school').textContent = SCHOOL_NAME;
-  $('#ver').textContent = 'Created by : KB RA At Tibyan';
+  $('#ver').textContent = 'Created by : Furqon';
   updateHeader();
   load({ force: true });
   setInterval(function () {
