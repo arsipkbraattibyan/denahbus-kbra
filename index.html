@@ -752,9 +752,15 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     toast(val ? '✓ ' + p.nama + ' sudah naik' : 'Batal naik: ' + p.nama);
   }
   function moveSeat(from, to) {
-    var bid = S.busId;
+    var bid = S.busId, m = paxMap(bid);
+    var namaA = m[from] ? m[from].nama : '', namaB = m[to] ? m[to].nama : '';   // catat nama sebelum data berubah
+    var eja = function (c) { return String(c).replace(/(\d+)([A-Z])/, '$1 $2'); };
     opt(function () { localMove(bid, from, to); },
-        function () { return api.movePenumpang(S.tok, bid, from, to); }, 'Kursi dipindahkan ✓');
+        function () { return api.movePenumpang(S.tok, bid, from, to); }, 'Kursi dipindahkan ✓', function () {
+          var t = namaA + ' pindah kursi ' + eja(to);
+          if (namaB) t += ', dan ' + namaB + ' pindah kursi ' + eja(from);   // kursi tujuan terisi: keduanya bertukar
+          speak(t);
+        });
   }
 
   /* ---------- render ---------- */
@@ -1307,6 +1313,10 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       var row = { kursi: d.get('kursi'), nama: String(d.get('nama')).replace(/\s+/g, ' ').trim(), tipe: d.get('tipe'),
                   info: String(d.get('info') || '').trim(), hp: String(d.get('hp') || '').replace(/[^0-9+]/g, ''),
                   catatan: String(d.get('catatan') || '').trim() };
+      var mv = old && old !== row.kursi;                       // kursi diganti: kalimat sama dengan pemindahan
+      var other = mv ? paxMap(bid)[row.kursi] : null;          // penghuni kursi tujuan (jika ada, keduanya bertukar)
+      var namaB = other ? other.nama : '';
+      var eja = function (c) { return String(c).replace(/(\d+)([A-Z])/, '$1 $2'); };
       closeModal();
       opt(function () { localSave(bid, old, row); },
           function () {
@@ -1315,7 +1325,13 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
               info: row.info, hp: row.hp, catatan: row.catatan
             });
           }, 'Tersimpan ✓', function () {
-            speak('Kursi ' + String(row.kursi).replace(/(\d+)([A-Z])/, '$1 $2') + ' berhasil terisi');
+            if (mv) {
+              var t = row.nama + ' pindah kursi ' + eja(row.kursi);
+              if (namaB) t += ', dan ' + namaB + ' pindah kursi ' + eja(old);
+              speak(t);
+            } else {
+              speak('Kursi ' + eja(row.kursi) + ' berhasil terisi');
+            }
           });
     } else if (f.id === 'fBus') {
       var id = f.dataset.id;
