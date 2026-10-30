@@ -129,6 +129,10 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 .bus::before,.bus::after{content:'';position:absolute;bottom:44px;width:12px;height:56px;background:#4b4570;border-radius:6px}
 .bus::before{left:-13px}
 .bus::after{right:-13px}
+/* ban depan (di sisi sopir) */
+.front::before,.front::after{content:'';position:absolute;top:58px;width:12px;height:56px;background:#4b4570;border-radius:6px}
+.front::before{left:-13px}
+.front::after{right:-13px}
 .front{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:6px 8px 14px;margin-bottom:12px;border-bottom:3px dashed #ffe08a}
 .driver{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:800;color:#6a5a2a;background:#fff;padding:7px 14px;border-radius:99px;border:2px solid #ffe08a}
 .door{font-size:12.5px;font-weight:800;color:#6a5a2a;border:2px dashed #e8b84a;padding:6px 14px;border-radius:99px;background:#fff}
@@ -291,6 +295,9 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
        --sw:min(84px, calc((100cqw - 20px - 18px - 4px * var(--nrm,4)) / var(--nrm,4)), calc((100cqw - 20px - 4px * (var(--cols,4) - 1)) / var(--cols,4)))}
   .bus::before{left:-6px;width:7px}
   .bus::after{right:-6px;width:7px}
+  .front::before,.front::after{top:46px;width:7px;height:44px}
+  .front::before{left:-6px}
+  .front::after{right:-6px}
   .front{gap:8px;padding:4px 2px 10px}
   .driver{padding:5px 9px;font-size:11px}
   .door{padding:4px 9px;font-size:11px}
