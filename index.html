@@ -45,8 +45,6 @@ button,input,select,textarea{font:inherit;color:inherit}
 #bar.on{width:80%}
 
 /* ===== header ===== */
-.topline{width:calc(100% - 24px);max-width:1156px;margin:10px auto 0;display:flex;justify-content:flex-end}
-.topline + .top{margin-top:8px}
 .top{position:relative;z-index:20;overflow:visible;width:calc(100% - 24px);max-width:1156px;margin:14px auto 8px;padding:18px 20px;border-radius:30px;
   background:linear-gradient(115deg,#dff3ff 0%,#fff3d1 55%,#ffe2ee 100%);border:3px solid #fff;box-shadow:var(--shadow);
   display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:'logo titles btn' 'search search search';gap:14px 22px;align-items:center}
@@ -61,7 +59,9 @@ button,input,select,textarea{font:inherit;color:inherit}
 .titles h1{min-height:1.1em;font-size:clamp(17px,3.6vw,40px);margin:0;font-weight:700;letter-spacing:-.01em;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .titles p{margin:6px 0 0;font-size:14.5px;font-weight:700;color:#5d5688;line-height:1.35}
 .titles p.tagline{margin-top:2px;font-weight:600;color:#7a75a0}
-#adminBtn{grid-area:btn;padding:12px 22px}
+.hbtns{grid-area:btn;display:flex;flex-direction:column;gap:8px;align-items:stretch}
+#adminBtn{padding:12px 22px}
+#exitBtn{white-space:nowrap}
 .search{grid-area:search;position:relative;width:100%}
 .search input{width:100%;padding:15px 20px 15px 50px;border-radius:99px;border:3px solid #fff;background:#fff;outline:none;transition:.15s;box-shadow:0 6px 16px -10px rgba(91,61,245,.5);font-weight:600}
 .search input::placeholder{color:#9a95b8;font-weight:600}
@@ -392,7 +392,6 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
 <body>
 <div id="bar"></div>
 
-<div class="topline no-print"><button id="exitBtn" class="btn ghost small" type="button">🚪 Keluar Aplikasi</button></div>
 <header class="top no-print">
   <span class="deco d1">☁️</span><span class="deco d2">⭐</span><span class="deco d3">🎈</span>
   <div class="logo"><img src="logo.png" alt="Logo KB RA At Tibyan" width="96" height="96" onerror="this.replaceWith(document.createTextNode('🐥'))"></div>
@@ -405,7 +404,10 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     <input id="q" type="search" placeholder="Cari nama anak atau wali…" autocomplete="off">
     <div id="results"></div>
   </div>
-  <button id="adminBtn" class="btn ghost">🔒 Masuk Guru</button>
+  <div class="hbtns">
+    <button id="adminBtn" class="btn ghost">🔒 Masuk Guru</button>
+    <button id="exitBtn" class="btn ghost small" type="button">🚪 Keluar Aplikasi</button>
+  </div>
 </header>
 
 <main id="app"><div class="skeleton"></div></main>
