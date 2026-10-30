@@ -245,6 +245,10 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 .skeleton{height:420px;border-radius:28px;background:linear-gradient(90deg,#f1eefc 25%,#fff 50%,#f1eefc 75%);background-size:200% 100%;animation:sh 1.2s infinite}
 @keyframes sh{to{background-position:-200% 0}}
 
+#bye{position:fixed;inset:0;z-index:200;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center}
+#bye img{width:140px;height:140px;object-fit:contain}
+#bye h2{margin:0;font-size:22px}
+#bye p{margin:0;color:var(--muted);font-weight:700;font-size:14px;max-width:320px}
 footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted);padding:0 16px 28px}
 
 @media (max-width:760px){
@@ -364,7 +368,10 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
 </header>
 
 <main id="app"><div class="skeleton"></div></main>
-<footer class="foot no-print"><span id="ver"></span></footer>
+<footer class="foot no-print">
+  <button id="exitBtn" class="btn ghost small" type="button">🚪 Keluar Aplikasi</button>
+  <div style="margin-top:12px"><span id="ver"></span></div>
+</footer>
 <div id="modal"></div>
 <div id="toast"></div>
 
@@ -1415,6 +1422,55 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if (S.admin) logout(); else openLogin();
   });
 
+  /* ---------- salam pembuka (salam.mp3) ---------- */
+  function salamDone() { try { sessionStorage.setItem('denah_salam', '1'); } catch (x) { /* abaikan */ } }
+  function salam() {
+    if (!S.suara) return;
+    try { if (sessionStorage.getItem('denah_salam')) return; } catch (x) { /* abaikan */ }
+    var a;
+    try { a = new Audio('salam.mp3'); a.preload = 'auto'; } catch (x) { return; }
+    S.salamAudio = a;
+    var p = a.play();
+    if (p && p.then) {
+      p.then(salamDone).catch(function () {
+        /* browser memblokir suara otomatis: putar pada sentuhan pertama */
+        var h = function () {
+          document.removeEventListener('pointerdown', h, true);
+          document.removeEventListener('keydown', h, true);
+          a.play().then(salamDone).catch(function () { /* abaikan */ });
+        };
+        document.addEventListener('pointerdown', h, true);
+        document.addEventListener('keydown', h, true);
+      });
+    } else { salamDone(); }
+  }
+
+  /* ---------- keluar aplikasi ---------- */
+  function showBye() {
+    if ($('#bye')) return;
+    var d = document.createElement('div');
+    d.id = 'bye';
+    d.innerHTML = '<img src="logo.png" alt="" onerror="this.style.display=\'none\'"><h2>Anda sudah keluar</h2>' +
+      '<p>Silakan tekan tombol Beranda atau geser aplikasi ini untuk menutupnya.</p>' +
+      '<button class="btn primary" type="button" id="byeOpen">Buka lagi</button>';
+    document.body.appendChild(d);
+    $('#byeOpen').addEventListener('click', function () { location.reload(); });
+  }
+  function exitApp() {
+    confirmBox('Keluar dari aplikasi?', 'Keluar').then(function (ok) {
+      if (!ok) return;
+      S.pending = 1e9;                                   // hentikan pembaruan otomatis
+      try { if (S.salamAudio) S.salamAudio.pause(); } catch (x) { /* abaikan */ }
+      try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (x) { /* abaikan */ }
+      if (S.tok) { api.logout(S.tok).catch(function () { /* abaikan */ }); }
+      S.admin = false; S.tok = '';
+      try { sessionStorage.removeItem('denah_tok'); sessionStorage.removeItem('denah_salam'); } catch (x) { /* abaikan */ }
+      try { window.close(); } catch (x) { /* abaikan */ }
+      setTimeout(showBye, 350);                          // jika browser tidak mengizinkan menutup sendiri
+    });
+  }
+  $('#exitBtn').addEventListener('click', exitApp);
+
   /* ---------- mulai ---------- */
   try {                                   // judul tersimpan dari kunjungan sebelumnya
     var cj = localStorage.getItem('denah_judul');
@@ -1435,6 +1491,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   $('#school').textContent = SCHOOL_NAME;
   $('#ver').textContent = 'Created by : Furqon';
   updateHeader();
+  salam();
   load({ force: true });
   setInterval(function () {
     if (document.hidden || modalEl.classList.contains('open') || drag || S.pending) return;
