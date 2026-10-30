@@ -657,13 +657,14 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   }
 
   /* aksi cepat: ubah tampilan dulu, kirim ke server di belakang; jika gagal, kembalikan */
-  function opt(mutate, call, okMsg) {
+  function opt(mutate, call, okMsg, onOk) {
     var snap = JSON.stringify(S.pnp);
     mutate(); S.sig = ''; render();
     busy(true); S.pending++;
     return call().then(function () {
       S.pending--;
       if (okMsg) toast(okMsg);
+      if (onOk) { try { onOk(); } catch (x) { /* abaikan */ } }
       return load({ force: true, silent: true });
     }).catch(function (e) {
       S.pending = Math.max(0, S.pending - 1);
@@ -1188,6 +1189,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   modalEl.addEventListener('click', function (e) {
     var it = e.target.closest('.ac-item');
     if (it) {
+      e.preventDefault();                 // cegah label ikut "mengetuk" kotak ketik (penyebab daftar muncul lagi)
       var inp = modalEl.querySelector('.ac input[name=info]');
       if (inp) inp.value = it.dataset.v;
       acHide();
@@ -1286,7 +1288,9 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
               busId: bid, oldKursi: old, kursi: row.kursi, nama: row.nama, tipe: row.tipe,
               info: row.info, hp: row.hp, catatan: row.catatan
             });
-          }, 'Tersimpan ✓');
+          }, 'Tersimpan ✓', function () {
+            speak('Kursi ' + String(row.kursi).replace(/(\d+)([A-Z])/, '$1 $2') + ' berhasil terisi');
+          });
     } else if (f.id === 'fBus') {
       var id = f.dataset.id;
       run(function () {
