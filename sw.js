@@ -2,7 +2,7 @@
  * - index.html, manifest, dan script: ambil dari internet dulu (selalu versi terbaru), cadangan dari penyimpanan jika offline.
  * - gambar, suara, font: pakai simpanan lalu perbarui di belakang.
  * Setiap kali mengganti file di hosting, cukup naikkan angka VERSION agar simpanan lama dibuang. */
-var VERSION = 'v16';
+var VERSION = 'v17';
 var CACHE = 'denah-bus-' + VERSION;
 var PRECACHE = ['./', 'index.html', 'manifest.webmanifest', 'logo.png', 'salam.mp3'];
 
