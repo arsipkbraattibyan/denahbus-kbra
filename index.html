@@ -6,6 +6,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#fff8e6">
+<meta name="msapplication-navbutton-color" content="#fff8e6">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Denah Bus KB RA At Tibyan</title>
 <link rel="icon" href="logo.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -22,13 +26,14 @@
   --wali:#ffab1f; --wali-bg:#fff0c2; --wali-tx:#7a4400;
   --guru:#22c1a0; --guru-bg:#d5f7ee; --guru-tx:#09594a;
   --sky:#8fd3ff;
+  --bars:#fff8e6;               /* warna status bar & tombol navigasi HP */
   --shadow:0 12px 28px -14px rgba(91,61,245,.35);
   --sw:70px;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
-html{-webkit-text-size-adjust:100%}
-body{overflow-x:hidden;font-family:'Nunito',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--page);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+html{-webkit-text-size-adjust:100%;background:var(--bars)}
+body{overflow-x:hidden;font-family:'Nunito',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--page);color:var(--text);min-height:100vh;min-height:100dvh;-webkit-font-smoothing:antialiased}
 h1,h2,h3,h4,.display{font-family:'Fredoka','Nunito',system-ui,sans-serif}
 button,input,select,textarea{font:inherit;color:inherit}
 .muted{color:var(--muted)}
@@ -1367,7 +1372,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   } catch (x) { /* abaikan */ }
   try { S.deep = new URLSearchParams(location.search).get('cari'); } catch (x) { /* abaikan */ }
   $('#school').textContent = SCHOOL_NAME;
-  $('#ver').textContent = 'Created by : Furqon';
+  $('#ver').textContent = 'Created by : KB RA At Tibyan';
   updateHeader();
   load({ force: true });
   setInterval(function () {
