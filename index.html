@@ -237,6 +237,14 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 .contact{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .logrow{display:flex;gap:10px;font-size:12.5px;padding:6px 0;border-bottom:1px solid var(--line)}
 .logrow time{color:var(--muted);font-weight:700;white-space:nowrap}
+.bscroll{max-height:52vh;overflow:auto;margin-right:-4px;padding-right:4px}
+.brw{padding:10px 0;border-bottom:1px solid var(--line)}
+.brw:last-child{border-bottom:0}
+.btop{display:flex;gap:10px;align-items:center}
+.btop .who{display:flex;flex-direction:column;min-width:0}
+.btop .who b{font-size:14.5px}
+.btop .who small{font-size:12px;font-weight:600;color:var(--muted)}
+.bact{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#2b2350;color:#fff;padding:12px 20px;border-radius:99px;font-size:14px;font-weight:800;opacity:0;pointer-events:none;transition:.25s;z-index:90;max-width:90vw;text-align:center}
 #toast.show{opacity:1;transform:translateX(-50%)}
@@ -858,7 +866,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         '<div class="modes">' + mb('edit', '✏️ Isi / Ubah') + mb('move', '↔️ Pindah') + mb('absen', '✅ Absen naik') +
         '<button class="btn ghost small warn" data-act="clearNaik">🧹 Clear Absen</button></div>' +
         '<div class="grp"><button class="btn primary small" data-act="addBus">＋ Tambah Bus</button>' +
-        (curBus() ? '<button class="btn tint small" data-act="editBus">⚙️ Atur Bus</button>' +
+        (curBus() ? '<button class="btn ok small" data-act="belum">⏳ Belum Naik</button>' +
+                    '<button class="btn tint small" data-act="editBus">⚙️ Atur Bus</button>' +
                     '<button class="btn tint small" data-act="import">📋 Impor Daftar</button>' : '') +
         '<button class="btn tint small" data-act="judul">📝 Ubah Judul</button>' +
         '<button class="btn ghost small" data-act="print">🖨️ Cetak</button>' +
@@ -1073,6 +1082,33 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       '<button class="btn primary">Impor</button></div></form>');
   }
 
+  /* daftar yang belum naik bus (bus yang sedang dipilih), dengan tombol telepon, WhatsApp, dan tandai naik */
+  function openBelumNaik() {
+    var b = curBus();
+    if (!b) return;
+    var old = modalEl.querySelector('.bscroll'), keep = old ? old.scrollTop : 0;
+    var all = S.pnp.filter(function (p) { return p.busId === b.id; })
+      .sort(function (x, y) { return seatKey(x.kursi) - seatKey(y.kursi); });
+    var belum = all.filter(function (p) { return !p.naik; });
+    var body;
+    if (!all.length) body = '<p class="muted">Belum ada penumpang di bus ini.</p>';
+    else if (!belum.length) body = '<div class="empty-state" style="padding:24px 8px"><div class="big" style="font-size:48px">✅</div><h2>Semua sudah naik</h2></div>';
+    else body = '<div class="bscroll">' + belum.map(function (p) {
+      var kontak = p.hp ? '<a class="btn tint small" href="tel:' + esc(p.hp) + '">📞 Telepon</a>' +
+        '<a class="btn tint small" target="_blank" rel="noopener" href="' + esc(waLink(p.hp)) + '">💬 WhatsApp</a>' : '';
+      return '<div class="brw"><div class="btop"><span class="badge ' + tipeCls(p.tipe) + '">' + esc(p.kursi) + '</span>' +
+        '<div class="who"><b>' + esc(p.nama) + '</b><small>' + descOf(p) + '</small></div></div>' +
+        (p.catatan ? '<div class="note" style="margin:6px 0 0">📌 ' + esc(p.catatan) + '</div>' : '') +
+        '<div class="bact">' + kontak + '<button class="btn ok small" data-act="tandai" data-code="' + esc(p.kursi) + '">✓ Sudah naik</button></div></div>';
+    }).join('') + '</div>';
+    modal('<h3>⏳ Belum naik <span class="pill">' + esc(b.nama) + '</span></h3>' +
+      '<p class="muted" style="margin:0 0 8px"><b>' + belum.length + '</b> belum naik dari ' + all.length + ' orang</p>' + body +
+      '<div class="actions"><button type="button" class="btn ghost left" data-act="belumRefresh">🔄 Segarkan</button>' +
+      '<button type="button" class="btn primary" data-close>Tutup</button></div>');
+    var nw = modalEl.querySelector('.bscroll');
+    if (nw) nw.scrollTop = keep;
+  }
+
   function openLog() {
     busy(true);
     api.getLog(S.tok).then(function (rows) {
@@ -1272,6 +1308,16 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         } else openSeatForm(code);
       });
     }
+    if (a === 'tandai') {
+      toggleNaik(act.dataset.code);       // tandai sudah naik, lalu gambar ulang daftar (posisi gulir dipertahankan)
+      openBelumNaik();
+      return;
+    }
+    if (a === 'belumRefresh') {
+      busy(true);
+      load({ force: true, silent: true }).then(function () { busy(false); openBelumNaik(); });
+      return;
+    }
     if (a === 'share') {
       var url = location.origin + location.pathname + '?cari=' + encodeURIComponent(act.dataset.nama);
       var done = function () { toast('Tautan disalin ✓'); };
@@ -1430,6 +1476,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       else if (a === 'editBus') openBusForm(true);
       else if (a === 'import') openImport();
       else if (a === 'log') openLog();
+      else if (a === 'belum') openBelumNaik();
       else if (a === 'judul') openJudulForm();
       else if (a === 'pin') openPinForm();
       else if (a === 'print') openExportDialog('print');
