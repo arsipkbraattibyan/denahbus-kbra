@@ -125,18 +125,14 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 
 /* ===== bus kuning ===== */
 .bus-wrap{overflow-x:auto;padding:14px 14px 6px}
-.bus{position:relative;width:max-content;margin:0 auto;background:#fffbe9;border:5px solid var(--sun);border-radius:60px 60px 24px 24px;padding:16px 22px 18px;box-shadow:inset 0 0 0 4px #fff,0 14px 24px -16px rgba(255,170,0,.8)}
-.bus::before,.bus::after{content:'';position:absolute;bottom:44px;width:12px;height:56px;background:repeating-linear-gradient(180deg,#26223d 0 4px,#46405f 4px 7px);border-radius:7px;border:2px solid #1d1a30;box-shadow:inset 3px 0 0 rgba(255,255,255,.14),inset -3px 0 0 rgba(0,0,0,.28),0 3px 6px -2px rgba(29,26,48,.55)}
-.bus::before{left:-13px}
-.bus::after{right:-13px}
-/* ban depan (di sisi sopir) */
-.front::before,.front::after{content:'';position:absolute;top:58px;width:12px;height:56px;background:repeating-linear-gradient(180deg,#26223d 0 4px,#46405f 4px 7px);border-radius:7px;border:2px solid #1d1a30;box-shadow:inset 3px 0 0 rgba(255,255,255,.14),inset -3px 0 0 rgba(0,0,0,.28),0 3px 6px -2px rgba(29,26,48,.55)}
-.front::before{left:-13px}
-.front::after{right:-13px}
+.bus{--padx:22px;--bo:13px;position:relative;width:max-content;margin:0 auto;background:#fffbe9;border:5px solid var(--sun);border-radius:60px 60px 24px 24px;padding:16px 22px 18px;box-shadow:inset 0 0 0 4px #fff,0 14px 24px -16px rgba(255,170,0,.8)}
 .front{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:6px 8px 14px;margin-bottom:12px;border-bottom:3px dashed #ffe08a}
 .driver{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:800;color:#6a5a2a;background:#fff;padding:7px 14px;border-radius:99px;border:2px solid #ffe08a}
 .door{font-size:12.5px;font-weight:800;color:#6a5a2a;border:2px dashed #e8b84a;padding:6px 14px;border-radius:99px;background:#fff}
-.brow{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:16px;width:100%}
+.ban{position:absolute;top:50%;width:12px;height:56px;margin-top:-28px;z-index:2;pointer-events:none;background:repeating-linear-gradient(180deg,#26223d 0 4px,#46405f 4px 7px);border-radius:7px;border:2px solid #1d1a30;box-shadow:inset 3px 0 0 rgba(255,255,255,.14),inset -3px 0 0 rgba(0,0,0,.28),0 3px 6px -2px rgba(29,26,48,.55)}
+.ban.l{left:calc(-1 * var(--padx) - var(--bo))}
+.ban.r{right:calc(-1 * var(--padx) - var(--bo))}
+.brow{position:relative;display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:16px;width:100%}
 .side.bench{width:100%;justify-content:space-between}
 .side{--gap:8px;display:flex;gap:var(--gap)}
 .aisle{width:34px;text-align:center;font-family:'Fredoka',sans-serif;font-size:13px;font-weight:600;color:#c9a23a}
@@ -293,11 +289,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
        --sw:min(84px, calc((100vw - 116px - var(--cols,4) * 4px) / var(--cols,4)));
        /* ukuran pas lebar kartu: yang lebih sempit antara baris biasa dan baris belakang */
        --sw:min(84px, calc((100cqw - 20px - 18px - 4px * var(--nrm,4)) / var(--nrm,4)), calc((100cqw - 20px - 4px * (var(--cols,4) - 1)) / var(--cols,4)))}
-  .bus::before{left:-6px;width:7px}
-  .bus::after{right:-6px;width:7px}
-  .front::before,.front::after{top:46px;width:7px;height:44px}
-  .front::before{left:-6px}
-  .front::after{right:-6px}
+  .bus{--padx:6px;--bo:6px}
+  .ban{width:7px;height:48px;margin-top:-24px}
   .front{gap:8px;padding:4px 2px 10px}
   .driver{padding:5px 9px;font-size:11px}
   .door{padding:4px 9px;font-size:11px}
@@ -339,8 +332,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
 .ex-item small{color:var(--muted);font-weight:600}
 .ex-root .bus-wrap{overflow:visible;padding:14px}
 .ex-root .bus{--sw:70px;padding:16px 22px 18px;border-width:5px;border-radius:60px 60px 24px 24px}
-.ex-root .bus::before{left:-13px;width:12px}
-.ex-root .bus::after{right:-13px;width:12px}
+.ex-root .bus{--padx:22px;--bo:13px}
+.ex-root .ban{width:12px;height:56px;margin-top:-28px}
 .ex-root .side{--gap:8px}
 .ex-root .brow{gap:8px;margin-bottom:16px}
 .ex-root .aisle{width:34px;font-size:13px}
@@ -441,7 +434,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   var GURU = ['Ust. Aini', 'Ust. Eli', 'Ust. Zulfa', 'Ust. Luluk', 'Operator'];          // pilihan nama saat login (harus sama dengan GURU_LIST di Code.gs)
   /* ========================== */
 
-  var NEED_VER = 10;                        // versi Code.gs yang dibutuhkan halaman ini
+  var NEED_VER = 11;                        // versi Code.gs yang dibutuhkan halaman ini
   var LETTERS = 'ABCDEF';
   var $ = function (s, el) { return (el || document).querySelector(s); };
   var esc = function (s) {
@@ -829,14 +822,23 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       ' title="' + title + '"><span class="tick">✓</span><span class="code">' + (p ? emojiOf(p.tipe) + ' ' : '') + code + '</span><span class="name">' + label + '</span></div>';
   }
 
+  function banRow(b, key, def) {
+    var v = b[key];
+    return (v === undefined || v === null || v === '') ? def : (Number(v) || 0);
+  }
+
   function busHtml(b, m) {
     var rows = '';
     var bn = backN(b);
+    var rowFront = banRow(b, 'banDepan', 2), rowRear = banRow(b, 'banBelakang', 9);   // baris tempat ban (0 = tanpa ban)
+    if (rowFront > b.baris) rowFront = b.baris;
+    if (rowRear > b.baris) rowRear = b.baris;
     for (var r = 1; r <= b.baris; r++) {
+      var tire = (r === rowFront || r === rowRear) ? '<i class="ban l"></i><i class="ban r"></i>' : '';
       if (bn && r === b.baris) {
         var all = '';
         for (var k = 0; k < bn; k++) all += seatHtml(r + LETTERS[k], m[r + LETTERS[k]]);
-        rows += '<div class="brow"><div class="side bench">' + all + '</div></div>';
+        rows += '<div class="brow">' + tire + '<div class="side bench">' + all + '</div></div>';
         continue;
       }
       var left = '', right = '', doorRow = isDoorRow(b, r);
@@ -851,7 +853,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         left += doorRow ? '<div class="doorseat" style="' + w + '">🚪 Pintu<small>Belakang</small></div>'
                         : '<div style="' + w + '"></div>';
       }
-      rows += '<div class="brow"><div class="side">' + left + '</div><div class="aisle">' + r +
+      rows += '<div class="brow">' + tire + '<div class="side">' + left + '</div><div class="aisle">' + r +
         '</div><div class="side">' + right + '</div></div>';
     }
     return '<div class="bus-wrap"><div class="bus" style="--cols:' + Math.max(b.kiri + b.kanan, bn) + ';--nrm:' + (b.kiri + b.kanan) + '">' +
@@ -1064,8 +1066,15 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     return h;
   }
 
+  function banOpts(n, v) {
+    var h = '<option value="0"' + (!v ? ' selected' : '') + '>Tanpa ban</option>';
+    for (var i = 1; i <= n; i++) h += '<option value="' + i + '"' + (i === v ? ' selected' : '') + '>Baris ke-' + i + '</option>';
+    return h;
+  }
+
   function openBusForm(editing) {
-    var b = editing ? curBus() : { nama: '', baris: 10, kiri: 2, kanan: 2, ket: '', pintuBaris: 9, belakang: 0, kiriBaris: '', kiriJumlah: 1 };
+    var b = editing ? curBus() : { nama: '', baris: 10, kiri: 2, kanan: 2, ket: '', pintuBaris: 9, belakang: 0, kiriBaris: '', kiriJumlah: 1, banDepan: 2, banBelakang: 9 };
+    var bd = Math.min(banRow(b, 'banDepan', 2), Number(b.baris) || 1), bb = Math.min(banRow(b, 'banBelakang', 9), Number(b.baris) || 1);
     var bel = Number(b.belakang) || 0, pb = Number(b.pintuBaris) || 0;
     var kb = parseRows(b.kiriBaris).join(', '), kj = Number(b.kiriJumlah) === 2 ? 2 : 1;
     modal('<h3>' + (editing ? '⚙️ Atur Bus' : '🚌 Tambah Bus') + '</h3>' +
@@ -1083,6 +1092,9 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         '<label>Baris dengan kursi kiri berkurang<input type="text" name="kiriBaris" maxlength="80" autocomplete="off" inputmode="numeric" value="' + esc(kb) + '" placeholder="mis. 1, 9 (kosongkan jika tidak ada)"></label>' +
         '<label>Kursi kiri<select name="kiriJumlah"><option value="1"' + (kj === 1 ? ' selected' : '') + '>1 kursi</option>' +
         '<option value="2"' + (kj === 2 ? ' selected' : '') + '>2 kursi</option></select></label></div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+        '<label>Ban depan<select name="banDepan" id="selBanD">' + banOpts(Number(b.baris) || 1, bd) + '</select></label>' +
+        '<label>Ban belakang<select name="banBelakang" id="selBanB">' + banOpts(Number(b.baris) || 1, bb) + '</select></label></div>' +
       '<label>Keterangan<input type="text" name="ket" maxlength="120" value="' + esc(b.ket) + '" placeholder="Rute Timur · berangkat 06.30"></label>' +
       '<div class="err" id="formErr"></div>' +
       '<div class="actions">' + (editing ? '<button type="button" class="btn ghost left" style="color:var(--danger)" data-act="delBus">Hapus bus</button>' : '') +
@@ -1383,6 +1395,10 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       var sel = $('#selPintu'), n = Math.max(1, Math.min(25, parseInt(e.target.value, 10) || 1));
       var v = Number(sel.value);
       sel.innerHTML = pintuOpts(n, v <= n ? v : 0);
+      ['#selBanD', '#selBanB'].forEach(function (id) {
+        var el = $(id), cur = Number(el.value);
+        el.innerHTML = banOpts(n, cur <= n ? cur : n);
+      });
     }
   });
   modalEl.addEventListener('submit', function (e) {
@@ -1432,7 +1448,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         return api.saveBus(S.tok, {
           id: id || '', nama: d.get('nama'), baris: Number(d.get('baris')),
           kiri: Number(d.get('kiri')), kanan: Number(d.get('kanan')), belakang: Number(d.get('belakang')), ket: d.get('ket'),
-          pintuBaris: Number(d.get('pintuBaris')), kiriBaris: d.get('kiriBaris'), kiriJumlah: Number(d.get('kiriJumlah'))
+          pintuBaris: Number(d.get('pintuBaris')), kiriBaris: d.get('kiriBaris'), kiriJumlah: Number(d.get('kiriJumlah')),
+          banDepan: Number(d.get('banDepan')), banBelakang: Number(d.get('banBelakang'))
         }).then(function (newId) { if (!id) S.busId = newId; });
       }, 'Bus tersimpan ✓');
     } else if (f.id === 'fImport') {
