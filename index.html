@@ -424,9 +424,10 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   var REFRESH_MS  = 20000;                  // pembaruan otomatis (20 dtk)
   var KELAS = ['KB', 'TK A', 'TK B'];       // pilihan kelas untuk anak
   var TUGAS = ['Kepala Sekolah', 'Wali Kelas KB', 'Wali Kelas TK A', 'Wali Kelas TK B'];  // pilihan tugas untuk guru
+  var GURU = ['Ust. Aini', 'Ust. Eli', 'Ust. Zulfa', 'Ust. Luluk', 'Operator'];          // pilihan nama saat login (harus sama dengan GURU_LIST di Code.gs)
   /* ========================== */
 
-  var NEED_VER = 9;                         // versi Code.gs yang dibutuhkan halaman ini
+  var NEED_VER = 10;                        // versi Code.gs yang dibutuhkan halaman ini
   var LETTERS = 'ABCDEF';
   var $ = function (s, el) { return (el || document).querySelector(s); };
   var esc = function (s) {
@@ -644,7 +645,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   }
   function logout(silent) {
     if (S.tok) { api.logout(S.tok).catch(function () { /* abaikan */ }); }
-    S.admin = false; S.tok = ''; S.mode = 'edit'; S.moveFrom = null; S.sig = '';
+    S.admin = false; S.tok = ''; S.guruNama = ''; S.mode = 'edit'; S.moveFrom = null; S.sig = '';
     tokClear();
     updateHeader(); render();
     if (!silent) toast('Anda sudah keluar dari mode guru');
@@ -862,7 +863,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     }
     if (S.admin) {
       var mb = function (k, t) { return '<button class="btn ghost small' + (S.mode === k ? ' on' : '') + '" data-mode="' + k + '">' + t + '</button>'; };
-      toolbar += '<div class="admin-bar no-print"><div class="hint"><b>Mode Guru aktif.</b> ' + MODE_HINT[S.mode] + '</div>' +
+      toolbar += '<div class="admin-bar no-print"><div class="hint"><b>Mode Guru aktif' + (S.guruNama ? ' · ' + esc(S.guruNama) : '') + '.</b> ' + MODE_HINT[S.mode] + '</div>' +
         '<div class="modes">' + mb('edit', '✏️ Isi / Ubah') + mb('move', '↔️ Pindah') + mb('absen', '✅ Absen naik') +
         '<button class="btn ghost small warn" data-act="clearNaik">🧹 Clear Absen</button></div>' +
         '<div class="grp"><button class="btn primary small" data-act="addBus">＋ Tambah Bus</button>' +
@@ -986,8 +987,11 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
 
   /* ---------- form & dialog ---------- */
   function openLogin() {
-    modal('<h3>🔐 Masuk sebagai Guru</h3><p class="muted">Masukkan PIN untuk mengatur denah bus.</p>' +
-      '<form id="fLogin"><label>PIN<input type="password" name="pin" inputmode="numeric" autocomplete="off" required></label>' +
+    var last = '';
+    try { last = localStorage.getItem('denah_guru') || ''; } catch (x) { /* abaikan */ }
+    modal('<h3>🔐 Masuk sebagai Guru</h3><p class="muted">Pilih nama Anda dan masukkan PIN untuk mengatur denah bus.</p>' +
+      '<form id="fLogin"><label>Nama<select name="nama" required>' + pilihOpts(GURU, last, '— Pilih nama —') + '</select></label>' +
+      '<label>PIN<input type="password" name="pin" inputmode="numeric" autocomplete="off" required></label>' +
       '<div class="err" id="err"></div><div class="actions"><button type="button" class="btn ghost" data-close>Batal</button>' +
       '<button class="btn primary">Masuk</button></div></form>');
   }
@@ -1114,7 +1118,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     api.getLog(S.tok).then(function (rows) {
       modal('<h3>🕘 Riwayat perubahan</h3><div style="max-height:55vh;overflow:auto">' +
         (rows.length ? rows.map(function (r) {
-          return '<div class="logrow"><time>' + esc(r.waktu.slice(5, 16)) + '</time><span><b>' + esc(r.aksi) + '</b> · ' + esc(r.detail) + '</span></div>';
+          return '<div class="logrow"><time>' + esc(r.waktu.slice(5, 16)) + '</time><span><b>' + esc(r.aksi) + '</b> · ' + esc(r.detail) + (r.guru ? ' <small class="muted">· ' + esc(r.guru) + '</small>' : '') + '</span></div>';
         }).join('') : '<p class="muted">Belum ada riwayat.</p>') +
         '</div><div class="actions"><button class="btn primary" data-close>Tutup</button></div>');
     }).catch(function (e) { if (!authFail(e)) toast(e.message, 'err'); })
@@ -1371,11 +1375,12 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     e.preventDefault();
     var f = e.target, d = new FormData(f);
     if (f.id === 'fLogin') {
-      var pin = d.get('pin');
+      var pin = d.get('pin'), nm = String(d.get('nama') || '');
       busy(true);
-      api.login(pin).then(function (tok) {
-        S.admin = true; S.tok = tok; S.sig = ''; S.partial = true;
-        tokSave(tok);
+      api.login(pin, nm).then(function (tok) {
+        S.admin = true; S.tok = tok; S.sig = ''; S.partial = true; S.guruNama = nm;
+        tokSave(tok, nm);
+        try { localStorage.setItem('denah_guru', nm); } catch (x) { /* abaikan */ }
         closeModal(); updateHeader(); render(); toast('Mode guru aktif ✓');
         load({ silent: true, force: true });       // ambil data lengkap (HP & catatan)
         flushQueue();                              // kirim absen yang tertunda (jika ada)
@@ -1534,7 +1539,10 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   });
 
   /* ---------- sesi guru (tersimpan di HP selama masa berlaku 6 jam) ---------- */
-  function tokSave(t) { try { localStorage.setItem('denah_tok', JSON.stringify({ t: t, at: Date.now() })); } catch (x) { /* abaikan */ } }
+  function tokSave(t, n) { try { localStorage.setItem('denah_tok', JSON.stringify({ t: t, n: n || '', at: Date.now() })); } catch (x) { /* abaikan */ } }
+  function tokName() {
+    try { var o = JSON.parse(localStorage.getItem('denah_tok') || 'null'); return (o && o.n) ? String(o.n) : ''; } catch (x) { return ''; }
+  }
   function tokLoad() {
     try {
       var o = JSON.parse(localStorage.getItem('denah_tok') || 'null');
@@ -1659,7 +1667,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   } catch (x) { /* abaikan */ }
   try { S.suara = localStorage.getItem('denah_suara') !== '0'; } catch (x) { /* abaikan */ }
   var tk = tokLoad();                     // sesi guru berlaku sampai habis masa 6 jam (juga saat aplikasi dibuka tanpa sinyal)
-  if (tk) { S.admin = true; S.tok = tk; S.partial = true; }
+  if (tk) { S.admin = true; S.tok = tk; S.partial = true; S.guruNama = tokName(); }
   try {                                   // tampilkan denah tersimpan dulu (instan), lalu perbarui dari server
     var cd = JSON.parse(localStorage.getItem('denah_data') || 'null');
     if (cd && cd.buses && cd.penumpang) { applyData(cd); render(); }
