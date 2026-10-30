@@ -337,6 +337,34 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
 .ex-root .driver,.ex-root .door{padding:7px 14px;font-size:12.5px}
 .ex-root .doorseat{height:68px;border-radius:20px 20px 16px 16px;border-width:3px;font-size:12.5px}
 .ex-page{position:relative;overflow:hidden;background:#fff}
+/* hasil cetak/PDF: tulisan lebih gelap, tebal, dan besar agar jelas dibaca wali murid */
+.ex-root{--exink:#150f35;--exsub:#3a3360;color:var(--exink)}
+.ex-head h1{color:var(--exink);font-size:30px}
+.ex-head p{color:var(--exsub);font-size:14.5px;font-weight:800}
+.ex-head .ex-date{color:var(--exsub);font-size:13px;font-weight:800}
+.ex-bname{color:var(--exink);font-size:23px}
+.ex-ket{color:var(--exsub);font-size:13.5px;font-weight:800}
+.ex-root .legend{font-size:14px;font-weight:800;color:var(--exink);gap:14px}
+.ex-root .legend i{width:16px;height:16px}
+.ex-root .legend .l-empty{border:2px dashed #8d84b8}
+.ex-stats{font-size:14px;font-weight:800;color:var(--exink);margin:10px 0 8px}
+.ex-item{font-size:14px;font-weight:700;color:var(--exink);padding:4px 0;border-bottom:1px solid #c9c3e2}
+.ex-item b{font-weight:800;color:var(--exink)}
+.ex-item small{color:var(--exsub);font-weight:700;font-size:13px}
+.ex-item .badge{font-size:12.5px;min-width:40px;padding:2px 5px;color:var(--exink)}
+.ex-item .badge.anak{color:#6e0d3a}
+.ex-item .badge.wali{color:#5e3200}
+.ex-item .badge.guru{color:#054538}
+.ex-root .seat .code{font-size:12px;font-weight:800;opacity:1}
+.ex-root .seat .name{font-size:12.5px;font-weight:800}
+.ex-root .seat.anak{color:#6e0d3a}
+.ex-root .seat.wali{color:#5e3200}
+.ex-root .seat.guru{color:#054538}
+.ex-root .seat.empty{color:#5a4a14;border-color:#c9a94a}
+.ex-root .seat.empty .name{font-size:12px;font-weight:800}
+.ex-root .aisle{color:#8a6a10;font-size:14px;font-weight:700}
+.ex-root .back{color:#7a5a10;font-weight:700}
+.ex-root .driver,.ex-root .door,.ex-root .doorseat{color:#4a3a08}
 
 @media print{
   body.printing{background:#fff}
