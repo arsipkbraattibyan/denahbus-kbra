@@ -1,0 +1,10 @@
+{
+  "name": "Denah Bus KB RA At Tibyan",
+  "short_name": "Denah Bus",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffc93c",
+  "lang": "id",
+  "icons": [{ "src": "logo.png", "sizes": "any", "type": "image/png", "purpose": "any" }]
+}
