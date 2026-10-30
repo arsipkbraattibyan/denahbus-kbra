@@ -1,10 +1,14 @@
 {
   "name": "Denah Bus KB RA At Tibyan",
   "short_name": "Denah Bus",
-  "start_url": "./",
+  "description": "Denah kursi bus KB RA At Tibyan",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#fff8e6",
   "theme_color": "#fff8e6",
-  "lang": "id",
-  "icons": [{ "src": "logo.png", "sizes": "any", "type": "image/png", "purpose": "any" }]
+  "icons": [
+    { "src": "logo.png", "sizes": "any", "type": "image/png", "purpose": "any" }
+  ]
 }
