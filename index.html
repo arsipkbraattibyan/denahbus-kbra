@@ -93,12 +93,13 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 .admin-bar{background:var(--primary-soft);border:2px dashed #c9bcff;border-radius:22px;padding:12px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0 12px}
 .admin-bar .hint{flex:1 1 260px;font-size:13px;color:var(--muted);font-weight:600}
 .admin-bar .hint b{color:var(--primary)}
-.admin-bar .grp{display:flex;gap:8px;flex-wrap:wrap}
-.modes{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%}
-@media (min-width:700px){.modes{grid-template-columns:repeat(4,1fr)}}
-.modes .btn.warn{color:var(--danger)}
-.modes .btn.warn:hover{border-color:var(--danger);color:var(--danger)}
-.modes .btn.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+/* semua tombol guru: satu kisi, ukuran (panjang & tinggi) sama */
+.tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%}
+@media (min-width:700px){.tools{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.tools .btn{width:100%;height:48px;min-height:48px;padding:0 10px;font-size:14px;line-height:1.15;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tools .btn.warn{color:var(--danger)}
+.tools .btn.warn:hover{border-color:var(--danger);color:var(--danger)}
+.tools .btn.on{background:var(--primary);color:#fff;border-color:var(--primary)}
 
 /* ===== tab bus ===== */
 .tabs{display:flex;gap:10px;overflow-x:auto;padding:8px 2px 12px;scrollbar-width:thin}
@@ -307,7 +308,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   .seat.empty .name{display:block;-webkit-line-clamp:unset;white-space:nowrap;font-size:9.5px;letter-spacing:-.2px;padding:0}
   .doorseat{height:58px;border-radius:15px 15px 12px 12px;border-width:2.5px;font-size:11px}
   .admin-bar{padding:10px}
-  .admin-bar .grp .btn{flex:1 1 auto}
+  .tools .btn{font-size:13px;padding:0 6px}
   .stat-big b{font-size:34px}
 }
 
@@ -783,7 +784,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       S.pnp.forEach(function (p) { if (p.busId === bid) p.naik = false; });
       S.sig = ''; render();
       qAdd({ k: 'clear', busId: bid });
-      toast('Absen direset ✓');
+      speak('Semua absen berhasil dihapus');
+      toast('Semua absen berhasil dihapus ✓');
     });
   }
   function toggleNaik(code) {
@@ -880,19 +882,18 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if (S.admin) {
       var mb = function (k, t) { return '<button class="btn ghost small' + (S.mode === k ? ' on' : '') + '" data-mode="' + k + '">' + t + '</button>'; };
       toolbar += '<div class="admin-bar no-print"><div class="hint"><b>Mode Guru aktif' + (S.guruNama ? ' · ' + esc(S.guruNama) : '') + '.</b> ' + MODE_HINT[S.mode] + '</div>' +
-        '<div class="modes">' + mb('edit', '✏️ Isi / Ubah') + mb('move', '↔️ Pindah') + mb('absen', '✅ Absen naik') +
-        '<button class="btn ghost small warn" data-act="clearNaik">🧹 Clear Absen</button></div>' +
-        '<div class="grp"><button class="btn primary small" data-act="addBus">＋ Tambah Bus</button>' +
+        '<div class="tools">' + mb('edit', '✏️ Isi / Ubah') + mb('move', '↔️ Pindah') + mb('absen', '✅ Absen Naik') +
+        '<button class="btn ghost small warn" data-act="clearNaik">🧹 Clear Absen</button>' +
+        '<button class="btn primary small" data-act="addBus">＋ Tambah Bus</button>' +
         (curBus() ? '<button class="btn ok small" data-act="belum">⏳ Belum Naik</button>' +
-                    '<button class="btn tint small" data-act="editBus">⚙️ Atur Bus</button>' +
-                    '<button class="btn tint small" data-act="import">📋 Impor Daftar</button>' : '') +
-        '<button class="btn tint small" data-act="judul">📝 Ubah Judul</button>' +
+                    '<button class="btn ghost small" data-act="editBus">⚙️ Atur Bus</button>' +
+                    '<button class="btn ghost small" data-act="import">📋 Impor Daftar</button>' : '') +
+        '<button class="btn ghost small" data-act="judul">📝 Ubah Judul</button>' +
         '<button class="btn ghost small" data-act="print">🖨️ Cetak</button>' +
         '<button class="btn ghost small" data-act="pdf">📄 Simpan PDF</button>' +
         '<button class="btn ghost small" data-act="suara">' + (S.suara ? '🔊 Suara' : '🔇 Suara mati') + '</button>' +
         '<button class="btn ghost small" data-act="log">🕘 Riwayat</button>' +
-        '<button class="btn ghost small" data-act="pin">🔑 Ganti PIN</button></div></div>';
-    }
+        '<button class="btn ghost small" data-act="pin">🔑 Ganti PIN</button></div></div>';    }
 
     if (!S.buses.length) {
       app.innerHTML = toolbar + '<div class="empty-state"><div class="big">🚌</div><h2>Belum ada denah bus</h2><p>' +
