@@ -111,10 +111,10 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 
 /* ===== pilihan tampilan: Denah Bus / Rundown ===== */
 /* dua tombol di tengah, jarak ke kartu atas (header) dan kartu bawah sama besar */
-.views{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:min(100%,440px);margin:0 auto 16px;padding:5px;background:#fff;border:2px solid var(--line2);border-radius:99px;box-shadow:var(--shadow)}
-.vbtn{border:0;background:transparent;border-radius:99px;padding:11px 8px;font-family:'Fredoka',sans-serif;font-weight:600;font-size:15px;cursor:pointer;color:var(--muted);transition:.15s;white-space:nowrap}
-.vbtn:hover{color:var(--primary)}
-.vbtn.on{background:var(--sun);color:#4a3200;box-shadow:0 6px 14px -8px rgba(255,170,0,.9)}
+.views{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:min(100%,440px);margin:0 auto 16px}
+.vbtn{border:2px solid var(--line2);background:#fff;border-radius:99px;padding:12px 8px;font-family:'Fredoka',sans-serif;font-weight:600;font-size:15px;cursor:pointer;color:var(--text);transition:.15s;white-space:nowrap;box-shadow:0 8px 16px -12px rgba(91,61,245,.45)}
+.vbtn:hover{border-color:var(--primary);color:var(--primary)}
+.vbtn.on{background:var(--sun);border-color:var(--sun);color:#4a3200;box-shadow:0 8px 16px -8px rgba(255,170,0,.9)}
 .vbtn:focus-visible{outline:3px solid var(--primary);outline-offset:2px}
 @media (max-width:520px){.views{margin-bottom:14px}}
 
@@ -533,7 +533,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   var GURU = ['Ust. Aini', 'Ust. Eli', 'Ust. Zulfa', 'Ust. Luluk', 'Operator'];          // pilihan nama saat login (harus sama dengan GURU_LIST di Code.gs)
   /* ========================== */
 
-  var NEED_VER = 13;                      // versi Code.gs yang dibutuhkan halaman ini
+  var NEED_VER = 14;                     // versi Code.gs yang dibutuhkan halaman ini
   var LETTERS = 'ABCDEF';
   var $ = function (s, el) { return (el || document).querySelector(s); };
   var esc = function (s) {
@@ -585,7 +585,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   }
   var api = { getData: function () { return rpc('getData', []); } };
   ['login', 'logout', 'getFull', 'getLog', 'saveJudul', 'savePenumpang', 'movePenumpang', 'removePenumpang',
-   'setNaik', 'clearNaik', 'importPenumpang', 'saveBus', 'deleteBus', 'changePin', 'saveRundown', 'deleteRundown', 'saveRunTgl']
+   'setNaik', 'clearNaik', 'importPenumpang', 'saveBus', 'deleteBus', 'changePin', 'saveRundown', 'deleteRundown', 'deleteRundownMany', 'saveRunTgl']
     .forEach(function (n) {
       api[n] = function () { return rpc(n, Array.prototype.slice.call(arguments)); };
     });
@@ -1051,7 +1051,9 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   function rundownHtml() {
     var list = S.rund || [], st = runStatus(list), now = wibNow();
     var btns = S.admin ? '<div class="rbtns no-print"><button class="btn primary small" data-act="addRun">＋ Tambah Kegiatan</button>' +
-      '<button class="btn ghost small" data-act="tgl">📅 Tanggal Acara</button></div>' : '';
+      '<button class="btn ghost small" data-act="tgl">📅 Tanggal Acara</button>' +
+      (list.length && st.indexOf('selesai') > -1 ? '<button class="btn ghost small" style="color:var(--danger)" data-act="runClearDone">🧹 Hapus yang Selesai</button>' : '') +
+      (list.length ? '<button class="btn ghost small" style="color:var(--danger)" data-act="runClearAll">🗑️ Hapus Semua</button>' : '') + '</div>' : '';
     var jamOf = function (x) {
       var t = parseJam(x.jam);
       return t.length ? fmtMin(t[0]) + (t.length > 1 ? ' – ' + fmtMin(t[1]) : '') : '';
@@ -1445,6 +1447,24 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       '<button type="button" class="btn ghost" data-close>Batal</button><button class="btn primary">Simpan</button></div></form>');
   }
 
+  /* hapus banyak kegiatan: hanya yang sudah selesai, atau semuanya */
+  function clearRundown(onlyDone) {
+    var list = S.rund || [], st = runStatus(list);
+    var ids = list.filter(function (x, i) { return !onlyDone || st[i] === 'selesai'; }).map(function (x) { return x.id; });
+    if (!ids.length) { toast('Belum ada kegiatan yang selesai'); return; }
+    var msg = onlyDone
+      ? 'Hapus <b>' + ids.length + ' kegiatan yang sudah selesai</b> dari rundown?'
+      : 'Hapus <b>semua ' + ids.length + ' kegiatan</b> dari rundown? Tindakan ini tidak bisa dibatalkan.';
+    confirmBox(msg, 'Hapus').then(function (ok) {
+      if (!ok) return;
+      run(function () {
+        return api.deleteRundownMany(S.tok, ids).then(function () {
+          speak(onlyDone ? 'Kegiatan yang selesai berhasil dihapus' : 'Semua kegiatan berhasil dihapus');
+        });
+      }, ids.length + ' kegiatan dihapus ✓');
+    });
+  }
+
   function openTglForm() {
     modal('<h3>📅 Tanggal Acara</h3>' +
       '<p class="muted">Dipakai agar kegiatan yang sudah lewat otomatis dicoret dan ditandai selesai di hari acara. Sebelum hari itu tidak ada tanda, setelahnya semua kegiatan tampil selesai.</p>' +
@@ -1678,7 +1698,9 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       var rid = act.dataset.id, rx = null;
       (S.rund || []).forEach(function (r) { if (r.id === rid) rx = r; });
       confirmBox('Hapus kegiatan <b>' + esc(rx ? rx.kegiatan : '') + '</b> dari rundown?', 'Hapus').then(function (ok) {
-        if (ok) run(function () { return api.deleteRundown(S.tok, rid); }, 'Kegiatan dihapus');
+        if (ok) run(function () {
+          return api.deleteRundown(S.tok, rid).then(function () { speak('Kegiatan berhasil dihapus'); });
+        }, 'Kegiatan dihapus');
         else openRunForm(rid);
       });
       return;
@@ -1785,8 +1807,11 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       if (tA === null && tB !== null) { ferr.textContent = 'Isi Jam Awal terlebih dahulu.'; return; }
       if (tA !== null && tB !== null && tB <= tA) { ferr.textContent = 'Jam Akhir harus lebih besar dari Jam Awal.'; return; }
       var jamTxt = tA === null ? '' : fmtMin(tA) + (tB === null ? '' : ' - ' + fmtMin(tB));
+      var kegNama = String(d.get('kegiatan') || '').replace(/\s+/g, ' ').trim();
       run(function () {
-        return api.saveRundown(S.tok, { id: rid2, jam: jamTxt, kegiatan: d.get('kegiatan'), ket: d.get('ket') });
+        return api.saveRundown(S.tok, { id: rid2, jam: jamTxt, kegiatan: d.get('kegiatan'), ket: d.get('ket') }).then(function () {
+          speak('Kegiatan ' + kegNama + (rid2 ? ' berhasil diubah' : ' berhasil ditambahkan'));      // bunyi setelah tersimpan di server
+        });
       }, 'Rundown tersimpan ✓');
     } else if (f.id === 'fTgl') {
       run(function () { return api.saveRunTgl(S.tok, d.get('tgl')); }, 'Tanggal acara disimpan ✓');
@@ -1895,6 +1920,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       var a = t.dataset.act;
       if (a === 'addRun') openRunForm('');
       else if (a === 'tgl') openTglForm();
+      else if (a === 'runClearDone') clearRundown(true);
+      else if (a === 'runClearAll') clearRundown(false);
       else if (a === 'addBus') openBusForm(false);
       else if (a === 'clearNaik') clearNaikAll();
       else if (a === 'suara') { S.suara = !S.suara; try { localStorage.setItem('denah_suara', S.suara ? '1' : '0'); } catch (x) { /* abaikan */ } render(); if (S.suara) speak('Suara aktif'); }
