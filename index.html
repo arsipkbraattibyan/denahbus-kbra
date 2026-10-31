@@ -260,6 +260,7 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 .sheet [hidden]{display:none!important}
 .sheet input[type=text],.sheet input[type=tel],.sheet input[type=password],.sheet input[type=number],.sheet select,.sheet textarea,.sheet input:not([type]){width:100%;margin-top:6px;padding:11px 14px;border-radius:14px;border:2px solid var(--line);background:var(--soft);outline:none;font-weight:600}
 .sheet textarea{min-height:160px;resize:vertical;font-size:13.5px}
+.sheet input[type=date]{width:100%;margin-top:6px;padding:11px 14px;border-radius:14px;border:2px solid var(--line);background:var(--soft);outline:none;font-weight:600;color-scheme:light}
 .sheet label[id]{position:relative}
 .sheet select.pk-hide{position:absolute;left:0;bottom:0;width:1px;height:1px;margin:0;padding:0;border:0;opacity:0;pointer-events:none}
 .pickbtn{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;margin-top:6px;padding:11px 14px;border-radius:14px;border:2px solid var(--line);background:var(--soft);color:var(--text);font-weight:600;text-align:left;cursor:pointer}
@@ -953,19 +954,117 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   };
 
   /* halaman Rundown: daftar kegiatan berurutan menurut jam; guru yang sudah masuk bisa menambah / mengubah */
+  /* ----- jam & status rundown (waktu mengikuti WIB) ----- */
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function fmtMin(n) { return pad2(Math.floor(n / 60)) + '.' + pad2(n % 60); }
+  /* ambil jam awal & akhir dari teks seperti "07.00 - 08.00" (hasilnya menit sejak 00.00) */
+  function parseJam(s) {
+    var re = /(\d{1,2})\s*[.:]\s*(\d{2})/g, out = [], m;
+    while (out.length < 2 && (m = re.exec(String(s == null ? '' : s)))) {
+      var h = Number(m[1]), mi = Number(m[2]);
+      if (h <= 23 && mi <= 59) out.push(h * 60 + mi);
+    }
+    return out;
+  }
+  function wibNow() {
+    try {
+      var p = {}, f = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+      f.formatToParts(new Date()).forEach(function (x) { p[x.type] = x.value; });
+      return { d: p.year + '-' + p.month + '-' + p.day, m: (Number(p.hour) % 24) * 60 + Number(p.minute) };
+    } catch (x) {
+      var n = new Date();
+      return { d: n.getFullYear() + '-' + pad2(n.getMonth() + 1) + '-' + pad2(n.getDate()), m: n.getHours() * 60 + n.getMinutes() };
+    }
+  }
+  function tglLabel(t) {
+    try {
+      return new Date(t + 'T12:00:00+07:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' });
+    } catch (x) { return t; }
+  }
+  /* status tiap kegiatan: '' (belum / tanpa jam), 'jalan' (sedang berlangsung), 'selesai'.
+     Tanda hanya dipakai bila tanggal acara sudah diisi: sebelum harinya tidak ada tanda, sesudahnya semua selesai. */
+  function runStatus(list) {
+    var res = list.map(function () { return ''; });
+    if (!S.rtgl) return res;
+    var now = wibNow();
+    if (now.d < S.rtgl) return res;
+    if (now.d > S.rtgl) return res.map(function () { return 'selesai'; });
+    list.forEach(function (x, i) {
+      var t = parseJam(x.jam);
+      if (!t.length) return;
+      var start = t[0], end = t.length > 1 ? t[1] : null;
+      if (end === null) {                                   // tanpa jam akhir: berakhir saat kegiatan berikutnya dimulai
+        for (var j = i + 1; j < list.length; j++) {
+          var nt = parseJam(list[j].jam);
+          if (nt.length && nt[0] > start) { end = nt[0]; break; }
+        }
+      }
+      if (now.m < start) return;
+      res[i] = (end !== null && now.m >= end) ? 'selesai' : 'jalan';
+    });
+    return res;
+  }
+
+  /* halaman Rundown: daftar kegiatan berurutan menurut jam; guru yang sudah masuk bisa menambah / mengubah */
   function rundownHtml() {
-    var list = S.rund || [];
-    var add = S.admin ? '<button class="btn primary small" data-act="addRun">＋ Tambah Kegiatan</button>' : '';
-    var items = list.length ? list.map(function (x) {
-      return '<div class="ritem' + (S.admin ? ' edit' : '') + '"' + (S.admin ? ' tabindex="0" role="button" data-run="' + esc(x.id) + '"' : '') + '>' +
-        '<div class="rjam">' + (x.jam ? esc(x.jam) : '–') + '</div>' +
-        '<div class="rbody"><b>' + esc(x.kegiatan) + '</b>' + (x.ket ? '<small>' + esc(x.ket) + '</small>' : '') + '</div>' +
+    var list = S.rund || [], st = runStatus(list);
+    var btns = S.admin ? '<div class="rbtns no-print"><button class="btn primary small" data-act="addRun">＋ Tambah Kegiatan</button>' +
+      '<button class="btn ghost small" data-act="tgl">📅 Tanggal Acara</button></div>' : '';
+    var done = st.filter(function (s) { return s === 'selesai'; }).length;
+    var items = list.length ? list.map(function (x, i) {
+      var t = parseJam(x.jam);
+      var jam = t.length ? fmtMin(t[0]) + (t.length > 1 ? ' – ' + fmtMin(t[1]) : '') : (x.jam ? esc(x.jam) : '–');
+      var tag = st[i] === 'selesai' ? '<span class="rst ok">✓ Selesai</span>'
+              : (st[i] === 'jalan' ? '<span class="rst now">● Sedang berlangsung</span>' : '');
+      return '<div class="ritem' + (S.admin ? ' edit' : '') + (st[i] ? ' st-' + st[i] : '') + '"' +
+        (S.admin ? ' tabindex="0" role="button" data-run="' + esc(x.id) + '"' : '') + '>' +
+        '<div class="rjam">' + jam + '</div>' +
+        '<div class="rbody"><b>' + esc(x.kegiatan) + '</b>' + (x.ket ? '<small>' + esc(x.ket) + '</small>' : '') + tag + '</div>' +
         (S.admin ? '<span class="rpen">✏️</span>' : '') + '</div>';
     }).join('') : '<div class="empty-state" style="padding:32px 12px"><div class="big">🗓️</div><h2>Rundown belum tersedia</h2><p>' +
       (S.admin ? 'Klik “Tambah Kegiatan” untuk membuat rundown.' : 'Rundown kegiatan akan ditampilkan di sini.') + '</p></div>';
-    return '<section class="card rundown"><div class="card-head"><div><h2>🗓️ Rundown Kegiatan</h2><p>' +
-      esc(S.judul || ('Denah Bus ' + EVENT_NAME)) + (S.admin && S.guruNama ? ' · Mode Guru: ' + esc(S.guruNama) : '') + '</p></div>' + add + '</div>' +
-      '<div class="rlist">' + items + '</div></section>';
+    var sub = esc(S.judul || ('Denah Bus ' + EVENT_NAME)) + (S.rtgl ? ' · ' + esc(tglLabel(S.rtgl)) : '');
+    var sum = (list.length && S.rtgl && done) ? '<p class="rsum">✅ ' + done + ' / ' + list.length + ' kegiatan selesai</p>' : '';
+    var hint = (S.admin && !S.rtgl)
+      ? '<div class="note no-print" style="margin:0 0 10px">📅 Isi <b>Tanggal Acara</b> agar kegiatan yang sudah lewat otomatis dicoret dan ditandai selesai.</div>' : '';
+    return '<section class="card rundown"><div class="card-head"><div><h2>🗓️ Rundown Kegiatan</h2><p>' + sub + '</p>' + sum + '</div>' + btns + '</div>' +
+      hint + '<div class="rlist">' + items + '</div></section>';
+  }
+
+  /* ----- pemilih jam: ketik, tombol ▲▼, gulir roda mouse, atau geser atas-bawah ----- */
+  function tmHtml(name, label, mins) {
+    var h = mins == null ? '' : pad2(Math.floor(mins / 60)), m = mins == null ? '' : pad2(mins % 60);
+    var col = function (u, v, ph, lb) {
+      return '<div class="tcol"><button type="button" class="tbtn" data-d="1" tabindex="-1" aria-label="' + lb + ' naik">▲</button>' +
+        '<input class="tin" type="text" inputmode="numeric" maxlength="2" autocomplete="off" data-u="' + u + '" placeholder="' + ph + '" value="' + v +
+        '" aria-label="' + label + ' (' + lb + ')"><button type="button" class="tbtn" data-d="-1" tabindex="-1" aria-label="' + lb + ' turun">▼</button></div>';
+    };
+    return '<div class="tmbox"><span class="tmlbl">' + label + '</span><div class="tm" data-tm="' + name + '">' +
+      col('h', h, '--', 'jam') + '<span class="tcolon">:</span>' + col('m', m, '--', 'menit') + '</div></div>';
+  }
+  /* baca satu kotak jam: null = kosong, angka = menit sejak 00.00 */
+  function readTm(name) {
+    var box = modalEl.querySelector('.tm[data-tm="' + name + '"]');
+    if (!box) return null;
+    var h = box.querySelector('[data-u=h]').value.trim(), m = box.querySelector('[data-u=m]').value.trim();
+    if (h === '' && m === '') return null;
+    var hv = Math.min(23, Number(h) || 0), mv = Math.min(59, Number(m) || 0);
+    return hv * 60 + mv;
+  }
+  function stepTm(box, unit, d) {
+    var hI = box.querySelector('[data-u=h]'), mI = box.querySelector('[data-u=m]');
+    var hv = hI.value === '' ? null : Number(hI.value), mv = mI.value === '' ? null : Number(mI.value);
+    if (hv === null && mv === null) {                       // masih kosong: mulai dari 07.00 (jam akhir: 1 jam setelah jam awal)
+      var base = 7 * 60, aw = box.getAttribute('data-tm') === 'akhir' ? readTm('mulai') : null;
+      if (aw !== null) base = Math.min(23 * 60 + 59, aw + 60);
+      hv = Math.floor(base / 60); mv = base % 60;
+      if (unit === 'h') hv = (hv + d + 24) % 24; else mv = ((mv + 5 * d) % 60 + 60) % 60;
+    } else {
+      hv = hv === null ? 0 : hv; mv = mv === null ? 0 : mv;
+      if (unit === 'h') hv = (hv + d + 24) % 24; else mv = ((mv + 5 * d) % 60 + 60) % 60;
+    }
+    hI.value = pad2(hv); mI.value = pad2(mv);
   }
 
   function render() {
@@ -979,7 +1078,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         '⚠️ Kode Google Apps Script belum versi terbaru (perlu versi ' + NEED_VER + '), jadi fitur baru tidak akan tersimpan. ' +
         'Buka Apps Script → Deploy → Kelola deployment → ikon pensil → Versi: <b>Versi baru</b> → Deploy.</div>';
     }
-    if (S.view === 'run') { app.innerHTML = toolbar + rundownHtml(); return; }
+    if (S.view === 'run') { S.rhtml = rundownHtml(); app.innerHTML = toolbar + S.rhtml; return; }
 
     if (S.admin) {
       var mb = function (k, t) { return '<button class="btn ghost small' + (S.mode === k ? ' on' : '') + '" data-mode="' + k + '">' + t + '</button>'; };
@@ -1261,14 +1360,25 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   function openRunForm(id) {
     var x = null;
     (S.rund || []).forEach(function (r) { if (r.id === id) x = r; });
+    var t = x ? parseJam(x.jam) : [];
     modal('<h3>' + (x ? '✏️ Ubah Kegiatan' : '🗓️ Tambah Kegiatan') + '</h3>' +
       '<form id="fRun" data-id="' + (x ? esc(x.id) : '') + '">' +
-      '<label>Jam<input type="text" name="jam" maxlength="20" autocomplete="off" placeholder="mis. 07.00 atau 07.00 - 08.00" value="' + esc(x ? x.jam : '') + '"></label>' +
       '<label>Kegiatan<input type="text" name="kegiatan" required maxlength="80" autocomplete="off" placeholder="mis. Berangkat dari sekolah" value="' + esc(x ? x.kegiatan : '') + '"></label>' +
+      '<div class="tmrow">' + tmHtml('mulai', 'Jam Awal', t.length ? t[0] : null) + tmHtml('akhir', 'Jam Akhir', t.length > 1 ? t[1] : null) + '</div>' +
+      '<p class="muted" style="font-size:12.5px;margin:8px 0 0">Ketik angkanya, ketuk ▲▼, atau geser angka ke atas / bawah. Kosongkan jika kegiatan tidak punya jam.</p>' +
       '<label>Keterangan (lokasi, penanggung jawab, dll.)<input type="text" name="ket" maxlength="160" autocomplete="off" value="' + esc(x ? x.ket : '') + '"></label>' +
       '<p class="muted" style="font-size:12.5px;margin:10px 0 0">Urutan di rundown mengikuti jam secara otomatis.</p>' +
       '<div class="err" id="formErr"></div><div class="actions">' +
       (x ? '<button type="button" class="btn ghost left" style="color:var(--danger)" data-act="delRun" data-id="' + esc(x.id) + '">Hapus</button>' : '') +
+      '<button type="button" class="btn ghost" data-close>Batal</button><button class="btn primary">Simpan</button></div></form>');
+  }
+
+  function openTglForm() {
+    modal('<h3>📅 Tanggal Acara</h3>' +
+      '<p class="muted">Dipakai agar kegiatan yang sudah lewat otomatis dicoret dan ditandai selesai di hari acara. Sebelum hari itu tidak ada tanda, setelahnya semua kegiatan tampil selesai.</p>' +
+      '<form id="fTgl"><label>Tanggal<input type="date" name="tgl" required value="' + esc(S.rtgl || '') + '"></label>' +
+      '<div class="err" id="formErr"></div><div class="actions">' +
+      (S.rtgl ? '<button type="button" class="btn ghost left" data-act="tglClear">Hapus tanggal</button>' : '') +
       '<button type="button" class="btn ghost" data-close>Batal</button><button class="btn primary">Simpan</button></div></form>');
   }
 
@@ -1488,6 +1598,10 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       run(function () { return api.saveJudul(S.tok, ''); }, 'Judul dikembalikan');
       return;
     }
+    if (a === 'tglClear') {
+      run(function () { return api.saveRunTgl(S.tok, ''); }, 'Tanggal acara dihapus');
+      return;
+    }
     if (a === 'delRun') {
       var rid = act.dataset.id, rx = null;
       (S.rund || []).forEach(function (r) { if (r.id === rid) rx = r; });
@@ -1595,10 +1709,15 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         });
       });
     } else if (f.id === 'fRun') {
-      var rid2 = f.dataset.id;
+      var rid2 = f.dataset.id, tA = readTm('mulai'), tB = readTm('akhir'), ferr = $('#formErr');
+      if (tA === null && tB !== null) { ferr.textContent = 'Isi Jam Awal terlebih dahulu.'; return; }
+      if (tA !== null && tB !== null && tB <= tA) { ferr.textContent = 'Jam Akhir harus lebih besar dari Jam Awal.'; return; }
+      var jamTxt = tA === null ? '' : fmtMin(tA) + (tB === null ? '' : ' - ' + fmtMin(tB));
       run(function () {
-        return api.saveRundown(S.tok, { id: rid2, jam: d.get('jam'), kegiatan: d.get('kegiatan'), ket: d.get('ket') });
+        return api.saveRundown(S.tok, { id: rid2, jam: jamTxt, kegiatan: d.get('kegiatan'), ket: d.get('ket') });
       }, 'Rundown tersimpan ✓');
+    } else if (f.id === 'fTgl') {
+      run(function () { return api.saveRunTgl(S.tok, d.get('tgl')); }, 'Tanggal acara disimpan ✓');
     } else if (f.id === 'fJudul') {
       run(function () { return api.saveJudul(S.tok, d.get('judul')); }, 'Judul diubah ✓');
     } else if (f.id === 'fPin') {
@@ -1617,8 +1736,62 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   });
   modalEl.addEventListener('click', function (e) {
     var pb = e.target.closest('.pickbtn');
-    if (pb) { e.preventDefault(); openPick(pb); }
+    if (pb) { e.preventDefault(); openPick(pb); return; }
+    var tb = e.target.closest('.tbtn');                      // tombol ▲ ▼ pada pemilih jam
+    if (tb) {
+      e.preventDefault();
+      var col = tb.closest('.tcol'), inp = col.querySelector('.tin');
+      stepTm(col.closest('.tm'), inp.dataset.u, Number(tb.dataset.d));
+    }
   });
+  /* pemilih jam: ketik angka (otomatis rapi), gulir roda mouse, geser atas-bawah */
+  modalEl.addEventListener('input', function (e) {
+    var t = e.target;
+    if (!t.classList || !t.classList.contains('tin')) return;
+    var v = t.value.replace(/\D/g, '').slice(0, 2), max = t.dataset.u === 'h' ? 23 : 59;
+    if (v !== '' && Number(v) > max) v = String(max);
+    t.value = v;
+    if (t.dataset.u === 'h' && v.length === 2) {            // dua angka jam sudah diketik: lanjut ke menit
+      var mi = t.closest('.tm').querySelector('[data-u=m]');
+      if (mi) { mi.focus(); try { mi.select(); } catch (x) { /* abaikan */ } }
+    }
+  });
+  modalEl.addEventListener('focusin', function (e) {
+    if (e.target.classList && e.target.classList.contains('tin')) { try { e.target.select(); } catch (x) { /* abaikan */ } }
+  });
+  modalEl.addEventListener('focusout', function (e) {
+    var t = e.target;
+    if (!t.classList || !t.classList.contains('tin') || t.value === '') return;
+    t.value = pad2(Number(t.value));
+    var box = t.closest('.tm'), o = box.querySelector(t.dataset.u === 'h' ? '[data-u=m]' : '[data-u=h]');
+    if (o && o.value === '') o.value = '00';                 // salah satu terisi: sisanya otomatis 00
+  });
+  modalEl.addEventListener('wheel', function (e) {
+    var col = e.target.closest && e.target.closest('.tcol');
+    if (!col) return;
+    e.preventDefault();
+    stepTm(col.closest('.tm'), col.querySelector('.tin').dataset.u, e.deltaY < 0 ? 1 : -1);
+  }, { passive: false });
+  var tdrag = null;
+  modalEl.addEventListener('pointerdown', function (e) {
+    var inp = e.target.closest && e.target.closest('.tin');
+    if (!inp) return;
+    tdrag = { box: inp.closest('.tm'), u: inp.dataset.u, y: e.clientY, n: 0, moved: false, inp: inp };
+  });
+  modalEl.addEventListener('pointermove', function (e) {
+    if (!tdrag) return;
+    var n = Math.trunc((tdrag.y - e.clientY) / 16);
+    if (n !== tdrag.n) {
+      stepTm(tdrag.box, tdrag.u, n - tdrag.n);
+      tdrag.n = n; tdrag.moved = true;
+    }
+  });
+  function endTdrag() {
+    if (tdrag && tdrag.moved) { try { tdrag.inp.blur(); } catch (x) { /* abaikan */ } }
+    tdrag = null;
+  }
+  document.addEventListener('pointerup', endTdrag);
+  document.addEventListener('pointercancel', endTdrag);
 
   /* ---------- event: halaman ---------- */
   var app = $('#app');
@@ -1649,6 +1822,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if ((t = e.target.closest('[data-act]'))) {
       var a = t.dataset.act;
       if (a === 'addRun') openRunForm('');
+      else if (a === 'tgl') openTglForm();
       else if (a === 'addBus') openBusForm(false);
       else if (a === 'clearNaik') clearNaikAll();
       else if (a === 'suara') { S.suara = !S.suara; try { localStorage.setItem('denah_suara', S.suara ? '1' : '0'); } catch (x) { /* abaikan */ } render(); if (S.suara) speak('Suara aktif'); }
@@ -1866,6 +2040,13 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && !S.pending && !modalEl.classList.contains('open')) load({ silent: true });
   });
+  /* rundown: tanda selesai / sedang berlangsung ikut berubah seiring waktu (cek tiap 30 detik, gambar ulang hanya jika berubah) */
+  function tickRundown() {
+    if (S.view !== 'run' || document.hidden || modalEl.classList.contains('open') || $('#pick')) return;
+    if (rundownHtml() !== S.rhtml) render();
+  }
+  setInterval(tickRundown, 30000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) tickRundown(); });
 
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
     window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () { /* abaikan */ }); });
