@@ -152,6 +152,12 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 .rcard b{display:block;font-size:16px;line-height:1.3;word-break:break-word}
 .rcard small{display:block;margin-top:2px;font-size:13.5px;font-weight:600;color:var(--muted);word-break:break-word}
 .rpen{align-self:start;padding:12px 0 0 8px;font-size:14px;opacity:.6}
+/* tombol atur jadwal (molor) di kartu kegiatan, hanya untuk guru */
+.rq{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.rq .btn{padding:7px 12px;font-size:12.5px}
+.adjq{display:grid;gap:8px;margin:10px 0 4px}
+.adjq .btn{width:100%;height:46px}
+.adjsep{border-top:2px dashed var(--line2);margin:16px 0 2px}
 .ritem.edit{cursor:pointer}
 .ritem.edit:hover .rcard{border-color:var(--primary)}
 .rst{display:inline-block;margin-top:6px;font-size:12.5px;font-weight:800;padding:3px 11px;border-radius:99px}
@@ -533,7 +539,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   var GURU = ['Ust. Aini', 'Ust. Eli', 'Ust. Zulfa', 'Ust. Luluk', 'Operator'];          // pilihan nama saat login (harus sama dengan GURU_LIST di Code.gs)
   /* ========================== */
 
-  var NEED_VER = 14;                     // versi Code.gs yang dibutuhkan halaman ini
+  var NEED_VER = 15;                    // versi Code.gs yang dibutuhkan halaman ini
   var LETTERS = 'ABCDEF';
   var $ = function (s, el) { return (el || document).querySelector(s); };
   var esc = function (s) {
@@ -585,7 +591,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   }
   var api = { getData: function () { return rpc('getData', []); } };
   ['login', 'logout', 'getFull', 'getLog', 'saveJudul', 'savePenumpang', 'movePenumpang', 'removePenumpang',
-   'setNaik', 'clearNaik', 'importPenumpang', 'saveBus', 'deleteBus', 'changePin', 'saveRundown', 'deleteRundown', 'deleteRundownMany', 'saveRunTgl']
+   'setNaik', 'clearNaik', 'importPenumpang', 'saveBus', 'deleteBus', 'changePin', 'saveRundown', 'deleteRundown', 'deleteRundownMany', 'saveRunTgl', 'adjustRundown']
     .forEach(function (n) {
       api[n] = function () { return rpc(n, Array.prototype.slice.call(arguments)); };
     });
@@ -1086,6 +1092,18 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     var prog = (S.rtgl && now.d >= S.rtgl && total && done)
       ? '<div class="rprog"><span>✅ ' + done + ' dari ' + total + ' kegiatan selesai</span><div><i style="width:' + Math.round(done / total * 100) + '%"></i></div></div>' : '';
 
+    /* tombol guru di kartu: selesai sekarang / tunda 10 menit (langsung) dan Atur jadwal (dialog lengkap) */
+    var rq = function (x, s, t) {
+      if (!S.admin || !t.length) return '';
+      var tdy = !!S.rtgl && now.d === S.rtgl, id = esc(x.id), b = '';
+      if (tdy && s === 'jalan') b += '<button class="btn ok small" data-act="runDone" data-id="' + id + '">✓ Selesai sekarang</button>';
+      if (t.length > 1 && (s === 'jalan' || (tdy && s === 'selesai' && now.m >= t[1] && now.m - t[1] <= 30))) {
+        b += '<button class="btn tint small" data-act="runDelay" data-id="' + id + '">⏱️ ' +
+          (s === 'selesai' ? 'Masih berjalan? Tunda 10 mnt' : 'Tunda 10 mnt') + '</button>';
+      }
+      b += '<button class="btn ghost small" data-act="runAdj" data-id="' + id + '">⚙️ Atur jadwal</button>';
+      return '<div class="rq no-print">' + b + '</div>';
+    };
     var items = list.length ? list.map(function (x, i) {
       var t = parseJam(x.jam), s = st[i] || (i === nextIdx ? 'next' : '');
       var tm = t.length ? '<div class="rtime"><b>' + fmtMin(t[0]) + '</b>' + (t.length > 1 ? '<small>' + fmtMin(t[1]) + '</small>' : '') + '</div>'
@@ -1095,7 +1113,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
               : (s === 'next' ? '<span class="rst next">⏭️ Berikutnya</span>' : ''));
       return '<div class="ritem' + (S.admin ? ' edit' : '') + (s ? ' st-' + s : '') + '"' +
         (S.admin ? ' tabindex="0" role="button" data-run="' + esc(x.id) + '"' : '') + '>' + tm + '<div class="rdot"><i></i></div>' +
-        '<div class="rcard"><b>' + esc(x.kegiatan) + '</b>' + (x.ket ? '<small>' + esc(x.ket) + '</small>' : '') + tag + '</div>' +
+        '<div class="rcard"><b>' + esc(x.kegiatan) + '</b>' + (x.ket ? '<small>' + esc(x.ket) + '</small>' : '') + tag + rq(x, s, t) + '</div>' +
         (S.admin ? '<span class="rpen">✏️</span>' : '') + '</div>';
     }).join('') : '<div class="empty-state" style="padding:32px 12px"><div class="big">🗓️</div><h2>Rundown belum tersedia</h2><p>' +
       (S.admin ? 'Klik “Tambah Kegiatan” untuk membuat rundown.' : 'Rundown kegiatan akan ditampilkan di sini.') + '</p></div>';
@@ -1447,6 +1465,86 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       '<button type="button" class="btn ghost" data-close>Batal</button><button class="btn primary">Simpan</button></div></form>');
   }
 
+  /* aksi cepat jadwal molor: 'selesai' (jam akhir = sekarang) atau 'tunda' (jam akhir +10 menit) */
+  function quickAdj(id, mode) {
+    if (mode === 'selesai') {
+      var c = nextPullable(id);
+      if (c) { openDoneAsk(id, c); return; }          // ada kegiatan berikutnya yang bersambung: tanya mau dimajukan atau tidak
+    }
+    doAdj(id, mode, false);
+  }
+  function doAdj(id, mode, majukan) {
+    var x = null;
+    (S.rund || []).forEach(function (r) { if (r.id === id) x = r; });
+    var nm = x ? x.kegiatan : '';
+    run(function () {
+      return api.adjustRundown(S.tok, id, mode, mode === 'tunda' ? 10 : 0, !!majukan).then(function (n) {
+        if (mode === 'tunda') toast(n > 1 ? 'Ditunda 10 menit, ' + (n - 1) + ' kegiatan berikutnya ikut mundur ✓' : 'Ditunda 10 menit ✓');
+        else toast(n > 1 ? 'Selesai ✓ ' + (n - 1) + ' kegiatan berikutnya dimajukan' : 'Ditandai selesai ✓');
+        speak(mode === 'selesai' ? 'Kegiatan ' + nm + ' selesai' : 'Kegiatan ' + nm + ' ditunda 10 menit');
+      });
+    });
+  }
+  /* kegiatan berikutnya yang bisa dimajukan: berjam, belum mulai, dan tadinya bersambung langsung dengan kegiatan ini (tanpa jeda) */
+  function nextPullable(id) {
+    var list = S.rund || [], idx = -1;
+    list.forEach(function (r, i) { if (r.id === id) idx = i; });
+    if (idx < 0) return null;
+    var t = parseJam(list[idx].jam), now = wibNow(), oldEnd = t.length > 1 ? t[1] : null;
+    for (var j = idx + 1; j < list.length; j++) {
+      var tj = parseJam(list[j].jam);
+      if (!tj.length) continue;
+      if (tj[0] <= now.m) return null;
+      if (oldEnd !== null && tj[0] > oldEnd) return null;
+      return { x: list[j], start: tj[0], now: now.m };
+    }
+    return null;
+  }
+  function openDoneAsk(id, c) {
+    var cur = null;
+    (S.rund || []).forEach(function (r) { if (r.id === id) cur = r; });
+    modal('<h3>✓ Selesai sekarang</h3>' +
+      '<p style="margin:0 0 8px"><b>' + esc(cur ? cur.kegiatan : '') + '</b> ditandai selesai pukul <b>' + fmtMin(c.now) + '</b>.</p>' +
+      '<p style="margin:0">Majukan <b>' + esc(c.x.kegiatan) + '</b> (semula mulai ' + fmtMin(c.start) + ') agar mulai sekarang? ' +
+      'Kegiatan setelahnya yang berurutan ikut maju, durasi tetap.</p>' +
+      '<div class="actions"><button type="button" class="btn ghost left" data-close>Batal</button>' +
+      '<button type="button" class="btn ghost" data-act="runDoneGo" data-id="' + esc(id) + '" data-mj="0">Selesai saja</button>' +
+      '<button type="button" class="btn ok" data-act="runDoneGo" data-id="' + esc(id) + '" data-mj="1">Selesai &amp; majukan</button></div>');
+  }
+
+  /* dialog Atur Jadwal: selesai sekarang, tunda, dan geser semua kegiatan sisa */
+  function openAdjForm(id) {
+    var list = S.rund || [], st = runStatus(list), x = null, s = '';
+    list.forEach(function (r, i) { if (r.id === id) { x = r; s = st[i]; } });
+    if (!x) return;
+    var t = parseJam(x.jam), now = wibNow(), tdy = !!S.rtgl && now.d === S.rtgl;
+    var jamTxt = t.length ? fmtMin(t[0]) + (t.length > 1 ? ' – ' + fmtMin(t[1]) : '') : 'tanpa jam';
+    var stTxt = s === 'selesai' ? 'Selesai' : (s === 'jalan' ? 'Sedang berlangsung' : 'Belum mulai');
+    var started = tdy && t.length > 0 && now.m > t[0] && (t.length < 2 || now.m < t[1]);
+    var nt = function (m) { return '<p class="muted" style="font-size:12.5px;margin:0">' + m + '</p>'; };
+    var q = started
+      ? '<button type="button" class="btn ok" data-act="runDone" data-id="' + esc(x.id) + '">✓ Selesai sekarang</button>'
+      : nt('“Selesai sekarang” aktif saat kegiatan sedang berlangsung di hari acara' + (S.rtgl ? '.' : ' (isi Tanggal Acara dulu).'));
+    q += t.length > 1
+      ? '<button type="button" class="btn tint" data-act="runDelay" data-id="' + esc(x.id) + '">⏱️ Tunda 10 menit (berikutnya ikut mundur bila bertabrakan)</button>'
+      : nt('“Tunda” perlu Jam Akhir. Ubah kegiatan dan isi Jam Akhir, atau pakai Geser di bawah.');
+    var mins = [5, 10, 15, 20, 30, 45, 60];
+    var opts = mins.map(function (m) { return '<option value="' + m + '"' + (m === 10 ? ' selected' : '') + '>' + m + ' menit</option>'; }).join('');
+    var inc = s === '';
+    modal('<h3>⏱️ Atur Jadwal</h3>' +
+      '<p style="margin:0"><b>' + esc(x.kegiatan) + '</b><br><span class="muted">' + esc(jamTxt) + ' · ' + stTxt + '</span></p>' +
+      '<div class="adjq">' + q + '</div>' +
+      '<div class="adjsep"></div>' +
+      '<form id="fAdj" data-id="' + esc(x.id) + '"><label>Geser kegiatan sisa sebanyak<select name="menit">' + opts + '</select></label>' +
+      '<div class="seg" style="grid-template-columns:1fr 1fr"><label><input type="radio" name="arah" value="+" checked><span>⏩ Mundur (molor)</span></label>' +
+      '<label><input type="radio" name="arah" value="-"><span>⏪ Maju (lebih cepat)</span></label></div>' +
+      '<div class="seg" style="grid-template-columns:1fr 1fr"><label><input type="radio" name="cakup" value="setelah"' + (inc ? '' : ' checked') + '><span>Hanya yang setelah ini</span></label>' +
+      '<label><input type="radio" name="cakup" value="termasuk"' + (inc ? ' checked' : '') + '><span>Kegiatan ini dan setelahnya</span></label></div>' +
+      '<p class="muted" style="font-size:12.5px;margin:10px 0 0">Jam awal dan akhir semua kegiatan yang dipilih ikut bergeser, jadi tanda selesai otomatis menyesuaikan.</p>' +
+      '<div class="err" id="formErr"></div><div class="actions"><button type="button" class="btn ghost" data-close>Tutup</button>' +
+      '<button class="btn primary">Geser</button></div></form>');
+  }
+
   /* hapus banyak kegiatan: hanya yang sudah selesai, atau semuanya */
   function clearRundown(onlyDone) {
     var list = S.rund || [], st = runStatus(list);
@@ -1686,6 +1784,14 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       if (a === 'doPdf') exportPdf(kk); else exportPrint(kk);
       return;
     }
+    if (a === 'runDoneGo') {
+      doAdj(act.dataset.id, 'selesai', act.dataset.mj === '1');
+      return;
+    }
+    if (a === 'runDone' || a === 'runDelay') {
+      quickAdj(act.dataset.id, a === 'runDone' ? 'selesai' : 'tunda');
+      return;
+    }
     if (a === 'judulReset') {
       run(function () { return api.saveJudul(S.tok, ''); }, 'Judul dikembalikan');
       return;
@@ -1813,6 +1919,14 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
           speak('Kegiatan ' + kegNama + (rid2 ? ' berhasil diubah' : ' berhasil ditambahkan'));      // bunyi setelah tersimpan di server
         });
       }, 'Rundown tersimpan ✓');
+    } else if (f.id === 'fAdj') {
+      var aid = f.dataset.id, mm = Number(d.get('menit')) * (d.get('arah') === '-' ? -1 : 1), inc2 = d.get('cakup') === 'termasuk';
+      run(function () {
+        return api.adjustRundown(S.tok, aid, 'geser', mm, inc2).then(function (n) {
+          toast(n + ' kegiatan digeser ' + (mm > 0 ? '+' : '') + mm + ' menit ✓');
+          speak('Jadwal berhasil digeser');
+        });
+      });
     } else if (f.id === 'fTgl') {
       run(function () { return api.saveRunTgl(S.tok, d.get('tgl')); }, 'Tanggal acara disimpan ✓');
     } else if (f.id === 'fJudul') {
@@ -1895,7 +2009,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   app.addEventListener('click', function (e) {
     var t;
     if ((t = e.target.closest('[data-view]'))) { S.view = t.dataset.view; S.hl = null; S.moveFrom = null; render(); window.scrollTo(0, 0); return; }
-    if ((t = e.target.closest('[data-run]'))) { if (S.admin) openRunForm(t.dataset.run); return; }
+    if (!e.target.closest('[data-act]') && (t = e.target.closest('[data-run]'))) { if (S.admin) openRunForm(t.dataset.run); return; }
     if ((t = e.target.closest('[data-bus]'))) { S.busId = t.dataset.bus; S.hl = null; S.moveFrom = null; render(); return; }
     if ((t = e.target.closest('[data-mode]'))) { S.mode = t.dataset.mode; S.moveFrom = null; render(); return; }
     if ((t = e.target.closest('.seat'))) {
@@ -1918,7 +2032,10 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if ((t = e.target.closest('[data-focus]'))) { focusSeat(S.busId, t.dataset.focus); return; }
     if ((t = e.target.closest('[data-act]'))) {
       var a = t.dataset.act;
-      if (a === 'addRun') openRunForm('');
+      if (a === 'runDone') quickAdj(t.dataset.id, 'selesai');
+      else if (a === 'runDelay') quickAdj(t.dataset.id, 'tunda');
+      else if (a === 'runAdj') openAdjForm(t.dataset.id);
+      else if (a === 'addRun') openRunForm('');
       else if (a === 'tgl') openTglForm();
       else if (a === 'runClearDone') clearRundown(true);
       else if (a === 'runClearAll') clearRundown(false);
