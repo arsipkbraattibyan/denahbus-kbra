@@ -765,7 +765,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
 
   function applyData(d) {
     S.ver = Number(d.ver) || 0; S.judul = String(d.judul || ''); applyTitle(); cacheJudul();
-    S.buses = d.buses; S.pnp = d.penumpang; S.rund = d.rundown || []; S.rtgl = d.runTgl || ''; S.loaded = true;
+    S.buses = d.buses; S.pnp = d.penumpang; S.rund = d.rundown || []; S.rtgl = /^\d{4}-\d{2}-\d{2}$/.test(String(d.runTgl || '')) ? String(d.runTgl) : ''; S.loaded = true;
     applyQueue();                         // tampilkan absen yang belum terkirim di atas data server
     if (!curBus()) S.busId = S.buses.length ? S.buses[0].id : null;
   }
