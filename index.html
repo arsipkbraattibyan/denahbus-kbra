@@ -940,8 +940,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     }).join('') : '<div class="empty-state" style="padding:32px 12px"><div class="big">🗓️</div><h2>Rundown belum tersedia</h2><p>' +
       (S.admin ? 'Klik “Tambah Kegiatan” untuk membuat rundown.' : 'Rundown kegiatan akan ditampilkan di sini.') + '</p></div>';
     return '<section class="card rundown"><div class="card-head"><div><h2>🗓️ Rundown Kegiatan</h2><p>' +
-      esc(S.judul || ('Denah Bus ' + EVENT_NAME)) + (S.admin && S.guruNama ? ' · Mode Guru: ' + esc(S.guruNama) : '') + '</p></div>' + add + '</div>' +
-      '<div class="rlist">' + items + '</div></section>';
+    ;
   }
 
   function render() {
