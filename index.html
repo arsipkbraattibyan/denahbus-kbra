@@ -119,21 +119,61 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 @media (max-width:520px){.views{margin-bottom:14px}}
 
 /* ===== rundown ===== */
-.rlist{display:flex;flex-direction:column;gap:8px}
 .rbtns{display:flex;gap:8px;flex-wrap:wrap}
 .rsum{margin:6px 0 0;font-size:13px;font-weight:800;color:var(--ok)}
-.ritem{display:flex;gap:12px;align-items:flex-start;padding:12px;border:2px solid transparent;border-radius:18px;background:var(--soft);-webkit-tap-highlight-color:transparent}
+
+/* ringkasan di atas: "sedang berlangsung" / "berikutnya" / "acara selesai" */
+.rhero{border-radius:22px;padding:14px 18px;margin:0 0 12px;background:var(--sun-soft);border:2px solid #ffe08a}
+.rhero .rk{display:block;font-size:12.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#7a5400}
+.rhero b{display:block;margin-top:2px;font-family:'Fredoka',sans-serif;font-size:21px;font-weight:600;line-height:1.2;word-break:break-word}
+.rhero small{display:block;margin-top:3px;font-size:13.5px;font-weight:700;color:#7a5400}
+.rhero.now{background:var(--ok-soft);border-color:var(--ok)}
+.rhero.now .rk,.rhero.now small{color:#0b6b46}
+.rhero.end{background:var(--primary-soft);border-color:#c9bcff}
+.rhero.end .rk,.rhero.end small{color:var(--primary)}
+.rprog{margin:0 0 16px}
+.rprog span{display:block;font-size:13px;font-weight:800;color:#0b6b46;margin-bottom:6px}
+.rprog div{height:10px;border-radius:99px;background:var(--line);overflow:hidden}
+.rprog i{display:block;height:100%;border-radius:99px;background:var(--ok);transition:width .5s}
+
+/* daftar kegiatan berbentuk garis waktu: jam | titik | kartu */
+.rlist{display:flex;flex-direction:column}
+.ritem{display:grid;grid-template-columns:62px 26px minmax(0,1fr) auto;column-gap:8px;padding-bottom:12px;-webkit-tap-highlight-color:transparent}
+.ritem:last-child{padding-bottom:0}
+.rtime{text-align:right;padding-top:9px;font-family:'Fredoka',sans-serif;line-height:1.15}
+.rtime b{display:block;font-size:17px;font-weight:600}
+.rtime small{display:block;margin-top:1px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.rtime.txt b{font-size:13px;word-break:break-word}
+.rdot{position:relative}
+.rdot::before{content:'';position:absolute;left:50%;top:22px;bottom:-14px;width:4px;margin-left:-2px;border-radius:4px;background:var(--line2)}
+.ritem:last-child .rdot::before{display:none}
+.rdot i{position:absolute;left:50%;top:11px;width:20px;height:20px;margin-left:-10px;border-radius:50%;background:#fff;border:4px solid var(--sun);box-sizing:border-box;z-index:1}
+.rcard{min-width:0;padding:10px 14px;border:2px solid var(--line);border-radius:18px;background:#fff}
+.rcard b{display:block;font-size:16px;line-height:1.3;word-break:break-word}
+.rcard small{display:block;margin-top:2px;font-size:13.5px;font-weight:600;color:var(--muted);word-break:break-word}
+.rpen{align-self:start;padding:12px 0 0 8px;font-size:14px;opacity:.6}
 .ritem.edit{cursor:pointer}
-.ritem.edit:hover{background:var(--primary-soft)}
-.rst{display:inline-block;margin-top:6px;font-size:12px;font-weight:800;padding:3px 10px;border-radius:99px}
+.ritem.edit:hover .rcard{border-color:var(--primary)}
+.rst{display:inline-block;margin-top:6px;font-size:12.5px;font-weight:800;padding:3px 11px;border-radius:99px}
 .rst.ok{background:var(--ok-soft);color:#0b6b46}
 .rst.now{background:var(--ok);color:#fff}
-/* sudah lewat: tetap tampil, dicoret dan diberi tanda selesai */
-.ritem.st-selesai{background:#f4f3f8}
-.ritem.st-selesai .rjam{background:var(--line);color:var(--muted)}
-.ritem.st-selesai .rbody b{text-decoration:line-through;text-decoration-thickness:2px;color:var(--muted)}
-/* sedang berlangsung: disorot */
-.ritem.st-jalan{background:#fff;border-color:var(--ok);box-shadow:0 0 0 4px var(--ok-soft)}
+.rst.next{background:var(--sun-soft);color:#7a5400}
+/* sudah lewat: tetap tampil, redup, dicoret, titik hijau berisi centang */
+.ritem.st-selesai .rdot::before{background:var(--ok)}
+.ritem.st-selesai .rdot i{background:var(--ok);border-color:var(--ok)}
+.ritem.st-selesai .rdot i::after{content:'✓';position:absolute;inset:0;color:#fff;font-size:11px;font-weight:800;font-style:normal;line-height:12px;text-align:center}
+.ritem.st-selesai .rtime{opacity:.55}
+.ritem.st-selesai .rcard{background:#f4f3f8;border-color:transparent}
+.ritem.st-selesai .rcard b{text-decoration:line-through;text-decoration-thickness:2px;color:var(--muted)}
+.ritem.st-selesai .rcard small{opacity:.8}
+/* sedang berlangsung: kartu hijau menyala dengan titik berdenyut */
+.ritem.st-jalan .rdot i{background:var(--ok);border-color:var(--ok-soft);box-shadow:0 0 0 3px var(--ok);animation:rpulse 1.6s ease-out infinite}
+.ritem.st-jalan .rtime b{color:#0b6b46}
+.ritem.st-jalan .rcard{background:var(--ok-soft);border-color:var(--ok);box-shadow:0 0 0 4px rgba(22,163,107,.14)}
+/* berikutnya: tepi kuning */
+.ritem.st-next .rdot i{border-color:var(--sun);background:var(--sun-soft)}
+.ritem.st-next .rcard{border-color:var(--sun);background:#fffdf3}
+@keyframes rpulse{0%{box-shadow:0 0 0 3px var(--ok),0 0 0 3px rgba(22,163,107,.45)}100%{box-shadow:0 0 0 3px var(--ok),0 0 0 12px rgba(22,163,107,0)}}
 
 /* pemilih jam (awal & akhir): bisa diketik, tombol ▲▼, gulir roda mouse, atau geser atas-bawah */
 .tmrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
@@ -145,12 +185,13 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 .tbtn:active{background:var(--primary-soft)}
 .sheet .tcol input.tin{width:52px;margin:4px 0;padding:6px 0;border-radius:12px;border:2px solid var(--line2);background:#fff;text-align:center;font-family:'Fredoka',sans-serif;font-size:26px;font-weight:600;touch-action:none;-webkit-user-select:text;user-select:text}
 .tcolon{font-family:'Fredoka',sans-serif;font-size:26px;font-weight:700;padding-bottom:2px}
-.rjam{flex:0 0 auto;min-width:92px;text-align:center;background:var(--sun);color:#4a3200;border-radius:99px;padding:6px 10px;font-family:'Fredoka',sans-serif;font-weight:600;font-size:14px;white-space:nowrap}
-.rbody{flex:1;min-width:0;padding-top:3px}
-.rbody b{display:block;font-size:15.5px;word-break:break-word}
-.rbody small{display:block;margin-top:2px;font-size:13px;font-weight:600;color:var(--muted);word-break:break-word}
-.rpen{flex:0 0 auto;font-size:14px;opacity:.6;padding-top:4px}
-@media (max-width:520px){.rjam{min-width:84px;font-size:13px;padding:6px 8px}}
+@media (max-width:520px){
+  .ritem{grid-template-columns:54px 22px minmax(0,1fr) auto;column-gap:6px}
+  .rtime b{font-size:16px}
+  .rcard{padding:9px 12px}
+  .rhero{padding:12px 14px}
+  .rhero b{font-size:19px}
+}
 
 /* ===== grid ===== */
 .grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
@@ -1008,28 +1049,59 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
 
   /* halaman Rundown: daftar kegiatan berurutan menurut jam; guru yang sudah masuk bisa menambah / mengubah */
   function rundownHtml() {
-    var list = S.rund || [], st = runStatus(list);
+    var list = S.rund || [], st = runStatus(list), now = wibNow();
     var btns = S.admin ? '<div class="rbtns no-print"><button class="btn primary small" data-act="addRun">＋ Tambah Kegiatan</button>' +
       '<button class="btn ghost small" data-act="tgl">📅 Tanggal Acara</button></div>' : '';
-    var done = st.filter(function (s) { return s === 'selesai'; }).length;
-    var items = list.length ? list.map(function (x, i) {
+    var jamOf = function (x) {
       var t = parseJam(x.jam);
-      var jam = t.length ? fmtMin(t[0]) + (t.length > 1 ? ' – ' + fmtMin(t[1]) : '') : (x.jam ? esc(x.jam) : '–');
-      var tag = st[i] === 'selesai' ? '<span class="rst ok">✓ Selesai</span>'
-              : (st[i] === 'jalan' ? '<span class="rst now">● Sedang berlangsung</span>' : '');
-      return '<div class="ritem' + (S.admin ? ' edit' : '') + (st[i] ? ' st-' + st[i] : '') + '"' +
-        (S.admin ? ' tabindex="0" role="button" data-run="' + esc(x.id) + '"' : '') + '>' +
-        '<div class="rjam">' + jam + '</div>' +
-        '<div class="rbody"><b>' + esc(x.kegiatan) + '</b>' + (x.ket ? '<small>' + esc(x.ket) + '</small>' : '') + tag + '</div>' +
+      return t.length ? fmtMin(t[0]) + (t.length > 1 ? ' – ' + fmtMin(t[1]) : '') : '';
+    };
+    var timed = list.filter(function (x) { return parseJam(x.jam).length; }).length;
+    var done = st.filter(function (s) { return s === 'selesai'; }).length;
+    var jalanIdx = st.indexOf('jalan'), nextIdx = -1;
+    if (S.rtgl && now.d === S.rtgl) {                      // hari acara: kegiatan berjam pertama yang belum mulai = "berikutnya"
+      for (var k = 0; k < list.length; k++) { if (st[k] === '' && parseJam(list[k].jam).length) { nextIdx = k; break; } }
+    }
+
+    /* ringkasan besar di atas: apa yang sedang / akan terjadi */
+    var hero = '';
+    if (S.rtgl && list.length) {
+      if (now.d < S.rtgl) {
+        var days = Math.round((new Date(S.rtgl + 'T00:00:00Z') - new Date(now.d + 'T00:00:00Z')) / 86400000);
+        hero = '<div class="rhero"><span class="rk">📅 Hari acara</span><b>' + esc(tglLabel(S.rtgl)) + '</b><small>' +
+          (days === 1 ? 'Besok' : days + ' hari lagi') + '</small></div>';
+      } else if (now.d > S.rtgl || (timed && done === timed && jalanIdx < 0 && nextIdx < 0)) {
+        hero = '<div class="rhero end"><span class="rk">🎉 Selesai</span><b>Semua kegiatan telah selesai</b><small>Terima kasih 🙏</small></div>';
+      } else if (jalanIdx > -1) {
+        hero = '<div class="rhero now"><span class="rk">● Sedang berlangsung</span><b>' + esc(list[jalanIdx].kegiatan) + '</b><small>' +
+          esc(jamOf(list[jalanIdx])) + (list[jalanIdx].ket ? ' · ' + esc(list[jalanIdx].ket) : '') + '</small></div>';
+      } else if (nextIdx > -1) {
+        hero = '<div class="rhero"><span class="rk">⏭️ Berikutnya</span><b>' + esc(list[nextIdx].kegiatan) + '</b><small>Pukul ' +
+          esc(jamOf(list[nextIdx])) + (list[nextIdx].ket ? ' · ' + esc(list[nextIdx].ket) : '') + '</small></div>';
+      }
+    }
+    var total = (S.rtgl && now.d > S.rtgl) ? list.length : timed;
+    var prog = (S.rtgl && now.d >= S.rtgl && total && done)
+      ? '<div class="rprog"><span>✅ ' + done + ' dari ' + total + ' kegiatan selesai</span><div><i style="width:' + Math.round(done / total * 100) + '%"></i></div></div>' : '';
+
+    var items = list.length ? list.map(function (x, i) {
+      var t = parseJam(x.jam), s = st[i] || (i === nextIdx ? 'next' : '');
+      var tm = t.length ? '<div class="rtime"><b>' + fmtMin(t[0]) + '</b>' + (t.length > 1 ? '<small>' + fmtMin(t[1]) + '</small>' : '') + '</div>'
+                        : '<div class="rtime txt"><b>' + (x.jam ? esc(x.jam) : '–') + '</b></div>';
+      var tag = s === 'selesai' ? '<span class="rst ok">✓ Selesai</span>'
+              : (s === 'jalan' ? '<span class="rst now">● Sedang berlangsung</span>'
+              : (s === 'next' ? '<span class="rst next">⏭️ Berikutnya</span>' : ''));
+      return '<div class="ritem' + (S.admin ? ' edit' : '') + (s ? ' st-' + s : '') + '"' +
+        (S.admin ? ' tabindex="0" role="button" data-run="' + esc(x.id) + '"' : '') + '>' + tm + '<div class="rdot"><i></i></div>' +
+        '<div class="rcard"><b>' + esc(x.kegiatan) + '</b>' + (x.ket ? '<small>' + esc(x.ket) + '</small>' : '') + tag + '</div>' +
         (S.admin ? '<span class="rpen">✏️</span>' : '') + '</div>';
     }).join('') : '<div class="empty-state" style="padding:32px 12px"><div class="big">🗓️</div><h2>Rundown belum tersedia</h2><p>' +
       (S.admin ? 'Klik “Tambah Kegiatan” untuk membuat rundown.' : 'Rundown kegiatan akan ditampilkan di sini.') + '</p></div>';
     var sub = esc(S.judul || ('Denah Bus ' + EVENT_NAME)) + (S.rtgl ? ' · ' + esc(tglLabel(S.rtgl)) : '');
-    var sum = (list.length && S.rtgl && done) ? '<p class="rsum">✅ ' + done + ' / ' + list.length + ' kegiatan selesai</p>' : '';
     var hint = (S.admin && !S.rtgl)
-      ? '<div class="note no-print" style="margin:0 0 10px">📅 Isi <b>Tanggal Acara</b> agar kegiatan yang sudah lewat otomatis dicoret dan ditandai selesai.</div>' : '';
-    return '<section class="card rundown"><div class="card-head"><div><h2>🗓️ Rundown Kegiatan</h2><p>' + sub + '</p>' + sum + '</div>' + btns + '</div>' +
-      hint + '<div class="rlist">' + items + '</div></section>';
+      ? '<div class="note no-print" style="margin:0 0 12px">📅 Isi <b>Tanggal Acara</b> agar kegiatan yang sudah lewat otomatis dicoret dan ditandai selesai.</div>' : '';
+    return '<section class="card rundown"><div class="card-head"><div><h2>🗓️ Rundown Kegiatan</h2><p>' + sub + '</p></div>' + btns + '</div>' +
+      hint + hero + prog + '<div class="rlist">' + items + '</div></section>';
   }
 
   /* ----- pemilih jam: ketik, tombol ▲▼, gulir roda mouse, atau geser atas-bawah ----- */
