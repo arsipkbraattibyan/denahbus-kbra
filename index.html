@@ -109,6 +109,25 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 .tab.active{background:var(--sun);border-color:var(--sun);color:#4a3200;box-shadow:0 8px 16px -8px rgba(255,170,0,.9)}
 .tab.active small{color:#7a5400}
 
+/* ===== pilihan tampilan: Denah Bus / Rundown ===== */
+.views{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 6px}
+.vbtn{border:2px solid var(--line2);background:#fff;border-radius:99px;padding:11px 8px;font-family:'Fredoka',sans-serif;font-weight:600;font-size:15px;cursor:pointer;color:var(--text);transition:.15s}
+.vbtn:hover{border-color:var(--primary)}
+.vbtn.on{background:var(--sun);border-color:var(--sun);color:#4a3200;box-shadow:0 8px 16px -8px rgba(255,170,0,.9)}
+.vbtn:focus-visible{outline:3px solid var(--primary);outline-offset:2px}
+
+/* ===== rundown ===== */
+.rlist{display:flex;flex-direction:column;gap:8px}
+.ritem{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:18px;background:var(--soft);-webkit-tap-highlight-color:transparent}
+.ritem.edit{cursor:pointer}
+.ritem.edit:hover{background:var(--primary-soft)}
+.rjam{flex:0 0 auto;min-width:92px;text-align:center;background:var(--sun);color:#4a3200;border-radius:99px;padding:6px 10px;font-family:'Fredoka',sans-serif;font-weight:600;font-size:14px;white-space:nowrap}
+.rbody{flex:1;min-width:0;padding-top:3px}
+.rbody b{display:block;font-size:15.5px;word-break:break-word}
+.rbody small{display:block;margin-top:2px;font-size:13px;font-weight:600;color:var(--muted);word-break:break-word}
+.rpen{flex:0 0 auto;font-size:14px;opacity:.6;padding-top:4px}
+@media (max-width:520px){.rjam{min-width:84px;font-size:13px;padding:6px 8px}}
+
 /* ===== grid ===== */
 .grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
 @media (max-width:900px){.grid{grid-template-columns:1fr}}
@@ -448,7 +467,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   var GURU = ['Ust. Aini', 'Ust. Eli', 'Ust. Zulfa', 'Ust. Luluk', 'Operator'];          // pilihan nama saat login (harus sama dengan GURU_LIST di Code.gs)
   /* ========================== */
 
-  var NEED_VER = 11;                        // versi Code.gs yang dibutuhkan halaman ini
+  var NEED_VER = 12;                       // versi Code.gs yang dibutuhkan halaman ini
   var LETTERS = 'ABCDEF';
   var $ = function (s, el) { return (el || document).querySelector(s); };
   var esc = function (s) {
@@ -500,13 +519,13 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   }
   var api = { getData: function () { return rpc('getData', []); } };
   ['login', 'logout', 'getFull', 'getLog', 'saveJudul', 'savePenumpang', 'movePenumpang', 'removePenumpang',
-   'setNaik', 'clearNaik', 'importPenumpang', 'saveBus', 'deleteBus', 'changePin']
+   'setNaik', 'clearNaik', 'importPenumpang', 'saveBus', 'deleteBus', 'changePin', 'saveRundown', 'deleteRundown']
     .forEach(function (n) {
       api[n] = function () { return rpc(n, Array.prototype.slice.call(arguments)); };
     });
 
   var S = { ver: 0, judul: '', buses: [], pnp: [], busId: null, admin: false, tok: '', mode: 'edit', moveFrom: null,
-            hl: null, sig: '', loaded: false, pending: 0, deep: null, suara: true };
+            hl: null, sig: '', loaded: false, pending: 0, deep: null, suara: true, view: 'bus', rund: [] };
   var drag = null, hlTimer = null, confirmRes = null;
 
   /* ---------- util data ---------- */
@@ -520,7 +539,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   function cacheData(d) {
     /* HP & catatan tidak pernah disimpan di perangkat: hanya data publik */
     var pub = {
-      buses: d.buses, ver: d.ver, judul: d.judul,
+      buses: d.buses, ver: d.ver, judul: d.judul, rundown: d.rundown || [],
       penumpang: d.penumpang.map(function (p) {
         return { busId: p.busId, kursi: p.kursi, nama: p.nama, tipe: p.tipe, info: p.info, naik: p.naik };
       })
@@ -721,7 +740,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
 
   function applyData(d) {
     S.ver = Number(d.ver) || 0; S.judul = String(d.judul || ''); applyTitle(); cacheJudul();
-    S.buses = d.buses; S.pnp = d.penumpang; S.loaded = true;
+    S.buses = d.buses; S.pnp = d.penumpang; S.rund = d.rundown || []; S.loaded = true;
     applyQueue();                         // tampilkan absen yang belum terkirim di atas data server
     if (!curBus()) S.busId = S.buses.length ? S.buses[0].id : null;
   }
@@ -731,7 +750,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if (!apiReady()) { if (!opts.silent) { applyTitle(); showSetup(); } return Promise.resolve(); }
     var req = S.admin ? api.getFull(S.tok) : api.getData();
     return req.then(function (d) {
-      var sig = JSON.stringify([d.buses, d.penumpang, d.ver, d.judul]);
+      var sig = JSON.stringify([d.buses, d.penumpang, d.ver, d.judul, d.rundown]);
       if (opts.silent && !opts.force && sig === S.sig) return;
       if (S.pending && opts.silent && !opts.force) return;     // jangan menimpa perubahan yang sedang dikirim
       S.sig = sig;
@@ -909,16 +928,35 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     absen: 'Ketuk kursi anak/wali/guru untuk menandai <b>sudah naik</b> (ketuk lagi untuk membatalkan). Tetap bisa dipakai tanpa sinyal: data dikirim otomatis saat sinyal kembali.'
   };
 
+  /* halaman Rundown: daftar kegiatan berurutan menurut jam; guru yang sudah masuk bisa menambah / mengubah */
+  function rundownHtml() {
+    var list = S.rund || [];
+    var add = S.admin ? '<button class="btn primary small" data-act="addRun">＋ Tambah Kegiatan</button>' : '';
+    var items = list.length ? list.map(function (x) {
+      return '<div class="ritem' + (S.admin ? ' edit' : '') + '"' + (S.admin ? ' tabindex="0" role="button" data-run="' + esc(x.id) + '"' : '') + '>' +
+        '<div class="rjam">' + (x.jam ? esc(x.jam) : '–') + '</div>' +
+        '<div class="rbody"><b>' + esc(x.kegiatan) + '</b>' + (x.ket ? '<small>' + esc(x.ket) + '</small>' : '') + '</div>' +
+        (S.admin ? '<span class="rpen">✏️</span>' : '') + '</div>';
+    }).join('') : '<div class="empty-state" style="padding:32px 12px"><div class="big">🗓️</div><h2>Rundown belum tersedia</h2><p>' +
+      (S.admin ? 'Klik “Tambah Kegiatan” untuk membuat rundown.' : 'Rundown kegiatan akan ditampilkan di sini.') + '</p></div>';
+    return '<section class="card rundown"><div class="card-head"><div><h2>🗓️ Rundown Kegiatan</h2><p>' +
+      esc(S.judul || ('Denah Bus ' + EVENT_NAME)) + (S.admin && S.guruNama ? ' · Mode Guru: ' + esc(S.guruNama) : '') + '</p></div>' + add + '</div>' +
+      '<div class="rlist">' + items + '</div></section>';
+  }
+
   function render() {
     var app = $('#app');
     app.className = S.admin ? 'admin' : '';
 
-    var toolbar = '';
+    var vb = function (k, t) { return '<button class="vbtn' + (S.view === k ? ' on' : '') + '" data-view="' + k + '">' + t + '</button>'; };
+    var toolbar = '<div class="views no-print">' + vb('bus', '🚌 Denah Bus') + vb('run', '🗓️ Rundown') + '</div>';
     if (S.admin && S.ver < NEED_VER) {
       toolbar += '<div class="err no-print" style="background:#ffe3ea;border:2px solid var(--danger);border-radius:18px;padding:12px 16px;margin:8px 0">' +
         '⚠️ Kode Google Apps Script belum versi terbaru (perlu versi ' + NEED_VER + '), jadi fitur baru tidak akan tersimpan. ' +
         'Buka Apps Script → Deploy → Kelola deployment → ikon pensil → Versi: <b>Versi baru</b> → Deploy.</div>';
     }
+    if (S.view === 'run') { app.innerHTML = toolbar + rundownHtml(); return; }
+
     if (S.admin) {
       var mb = function (k, t) { return '<button class="btn ghost small' + (S.mode === k ? ' on' : '') + '" data-mode="' + k + '">' + t + '</button>'; };
       toolbar += '<div class="admin-bar no-print"><div class="hint"><b>Mode Guru aktif' + (S.guruNama ? ' · ' + esc(S.guruNama) : '') + '.</b> ' + MODE_HINT[S.mode] + '</div>' +
@@ -990,7 +1028,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   }
   var focusJob = 0;
   function focusSeat(busId, code) {
-    var sameBus = S.busId === busId, job = ++focusJob;
+    var sameBus = S.busId === busId && S.view === 'bus', job = ++focusJob;
+    S.view = 'bus';                                        // hasil pencarian selalu membuka denah
     S.busId = busId; S.hl = busId + '|' + code;
     if (!sameBus) render();                                // pindah bus: gambar ulang sekali saja
     document.querySelectorAll('.seat.hl').forEach(function (x) { x.classList.remove('hl'); });
@@ -1193,6 +1232,20 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         '</div><div class="actions"><button class="btn primary" data-close>Tutup</button></div>');
     }).catch(function (e) { if (!authFail(e)) toast(e.message, 'err'); })
       .then(function () { busy(false); });
+  }
+
+  function openRunForm(id) {
+    var x = null;
+    (S.rund || []).forEach(function (r) { if (r.id === id) x = r; });
+    modal('<h3>' + (x ? '✏️ Ubah Kegiatan' : '🗓️ Tambah Kegiatan') + '</h3>' +
+      '<form id="fRun" data-id="' + (x ? esc(x.id) : '') + '">' +
+      '<label>Jam<input type="text" name="jam" maxlength="20" autocomplete="off" placeholder="mis. 07.00 atau 07.00 - 08.00" value="' + esc(x ? x.jam : '') + '"></label>' +
+      '<label>Kegiatan<input type="text" name="kegiatan" required maxlength="80" autocomplete="off" placeholder="mis. Berangkat dari sekolah" value="' + esc(x ? x.kegiatan : '') + '"></label>' +
+      '<label>Keterangan (lokasi, penanggung jawab, dll.)<input type="text" name="ket" maxlength="160" autocomplete="off" value="' + esc(x ? x.ket : '') + '"></label>' +
+      '<p class="muted" style="font-size:12.5px;margin:10px 0 0">Urutan di rundown mengikuti jam secara otomatis.</p>' +
+      '<div class="err" id="formErr"></div><div class="actions">' +
+      (x ? '<button type="button" class="btn ghost left" style="color:var(--danger)" data-act="delRun" data-id="' + esc(x.id) + '">Hapus</button>' : '') +
+      '<button type="button" class="btn ghost" data-close>Batal</button><button class="btn primary">Simpan</button></div></form>');
   }
 
   function openJudulForm() {
@@ -1411,6 +1464,15 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       run(function () { return api.saveJudul(S.tok, ''); }, 'Judul dikembalikan');
       return;
     }
+    if (a === 'delRun') {
+      var rid = act.dataset.id, rx = null;
+      (S.rund || []).forEach(function (r) { if (r.id === rid) rx = r; });
+      confirmBox('Hapus kegiatan <b>' + esc(rx ? rx.kegiatan : '') + '</b> dari rundown?', 'Hapus').then(function (ok) {
+        if (ok) run(function () { return api.deleteRundown(S.tok, rid); }, 'Kegiatan dihapus');
+        else openRunForm(rid);
+      });
+      return;
+    }
     if (a === 'delBus') {
       var b = curBus();
       confirmBox('Hapus <b>' + esc(b.nama) + '</b> beserta semua penumpangnya? Tindakan ini tidak bisa dibatalkan.', 'Hapus bus').then(function (ok) {
@@ -1508,6 +1570,11 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
           toast(msg + ' ✓');
         });
       });
+    } else if (f.id === 'fRun') {
+      var rid2 = f.dataset.id;
+      run(function () {
+        return api.saveRundown(S.tok, { id: rid2, jam: d.get('jam'), kegiatan: d.get('kegiatan'), ket: d.get('ket') });
+      }, 'Rundown tersimpan ✓');
     } else if (f.id === 'fJudul') {
       run(function () { return api.saveJudul(S.tok, d.get('judul')); }, 'Judul diubah ✓');
     } else if (f.id === 'fPin') {
@@ -1533,6 +1600,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   var app = $('#app');
   app.addEventListener('click', function (e) {
     var t;
+    if ((t = e.target.closest('[data-view]'))) { S.view = t.dataset.view; S.hl = null; S.moveFrom = null; render(); window.scrollTo(0, 0); return; }
+    if ((t = e.target.closest('[data-run]'))) { if (S.admin) openRunForm(t.dataset.run); return; }
     if ((t = e.target.closest('[data-bus]'))) { S.busId = t.dataset.bus; S.hl = null; S.moveFrom = null; render(); return; }
     if ((t = e.target.closest('[data-mode]'))) { S.mode = t.dataset.mode; S.moveFrom = null; render(); return; }
     if ((t = e.target.closest('.seat'))) {
@@ -1555,7 +1624,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if ((t = e.target.closest('[data-focus]'))) { focusSeat(S.busId, t.dataset.focus); return; }
     if ((t = e.target.closest('[data-act]'))) {
       var a = t.dataset.act;
-      if (a === 'addBus') openBusForm(false);
+      if (a === 'addRun') openRunForm('');
+      else if (a === 'addBus') openBusForm(false);
       else if (a === 'clearNaik') clearNaikAll();
       else if (a === 'suara') { S.suara = !S.suara; try { localStorage.setItem('denah_suara', S.suara ? '1' : '0'); } catch (x) { /* abaikan */ } render(); if (S.suara) speak('Suara aktif'); }
       else if (a === 'editBus') openBusForm(true);
@@ -1577,7 +1647,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     }
   });
   app.addEventListener('keydown', function (e) {
-    if ((e.key === 'Enter' || e.key === ' ') && (e.target.classList.contains('seat') || e.target.classList.contains('pitem'))) {
+    if ((e.key === 'Enter' || e.key === ' ') && (e.target.classList.contains('seat') || e.target.classList.contains('pitem') || e.target.classList.contains('ritem'))) {
       e.preventDefault(); e.target.click();
     }
   });
