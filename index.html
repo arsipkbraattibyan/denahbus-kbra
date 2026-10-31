@@ -129,12 +129,12 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 .rhero small{display:block;margin-top:3px;font-size:13.5px;font-weight:700;color:#7a5400}
 .rhero.now{background:var(--ok-soft);border-color:var(--ok)}
 .rhero.now .rk,.rhero.now small{color:#0b6b46}
-.rhero.end{background:var(--primary-soft);border-color:#c9bcff}
-.rhero.end .rk,.rhero.end small{color:var(--primary)}
+.rhero.end{background:#ffe3ea;border-color:var(--danger)}
+.rhero.end .rk,.rhero.end small{color:#b3173f}
 .rprog{margin:0 0 16px}
-.rprog span{display:block;font-size:13px;font-weight:800;color:#0b6b46;margin-bottom:6px}
+.rprog span{display:block;font-size:13px;font-weight:800;color:#b3173f;margin-bottom:6px}
 .rprog div{height:10px;border-radius:99px;background:var(--line);overflow:hidden}
-.rprog i{display:block;height:100%;border-radius:99px;background:var(--ok);transition:width .5s}
+.rprog i{display:block;height:100%;border-radius:99px;background:var(--danger);transition:width .5s}
 
 /* daftar kegiatan berbentuk garis waktu: jam | titik | kartu */
 .rlist{display:flex;flex-direction:column}
@@ -155,17 +155,17 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 .ritem.edit{cursor:pointer}
 .ritem.edit:hover .rcard{border-color:var(--primary)}
 .rst{display:inline-block;margin-top:6px;font-size:12.5px;font-weight:800;padding:3px 11px;border-radius:99px}
-.rst.ok{background:var(--ok-soft);color:#0b6b46}
+.rst.ok{background:var(--danger);color:#fff}
 .rst.now{background:var(--ok);color:#fff}
 .rst.next{background:var(--sun-soft);color:#7a5400}
-/* sudah lewat: tetap tampil, redup, dicoret, titik hijau berisi centang */
-.ritem.st-selesai .rdot::before{background:var(--ok)}
-.ritem.st-selesai .rdot i{background:var(--ok);border-color:var(--ok)}
+/* sudah lewat (selesai): kartu merah, dicoret, titik merah berisi centang; setara dengan hijau (berlangsung) dan kuning (berikutnya) */
+.ritem.st-selesai .rdot::before{background:var(--danger)}
+.ritem.st-selesai .rdot i{background:var(--danger);border-color:var(--danger)}
 .ritem.st-selesai .rdot i::after{content:'✓';position:absolute;inset:0;color:#fff;font-size:11px;font-weight:800;font-style:normal;line-height:12px;text-align:center}
-.ritem.st-selesai .rtime{opacity:.55}
-.ritem.st-selesai .rcard{background:#f4f3f8;border-color:transparent}
-.ritem.st-selesai .rcard b{text-decoration:line-through;text-decoration-thickness:2px;color:var(--muted)}
-.ritem.st-selesai .rcard small{opacity:.8}
+.ritem.st-selesai .rtime b{color:#b3173f}
+.ritem.st-selesai .rcard{background:#ffe3ea;border-color:var(--danger);box-shadow:0 0 0 4px rgba(232,65,107,.12)}
+.ritem.st-selesai .rcard b{text-decoration:line-through;text-decoration-thickness:2px;color:#8a1230}
+.ritem.st-selesai .rcard small{color:#a8324f}
 /* sedang berlangsung: kartu hijau menyala dengan titik berdenyut */
 .ritem.st-jalan .rdot i{background:var(--ok);border-color:var(--ok-soft);box-shadow:0 0 0 3px var(--ok);animation:rpulse 1.6s ease-out infinite}
 .ritem.st-jalan .rtime b{color:#0b6b46}
