@@ -1543,7 +1543,15 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     modal('<div class="info-card"><div class="seat-big ' + cls + '">' + code + '</div><div><h4>' + esc(p.nama) + '</h4><small>' +
       descOf(p) + '</small><br><small>' + esc(b.nama) + ' · Kursi ' + code + (p.naik ? ' · ✅ sudah naik' : '') + '</small></div></div>' +
       '<div class="actions"><button class="btn primary" data-close>Tutup</button></div>');
-    speak(p.nama + ' berada di kursi ' + String(code).replace(/(\d+)([A-Za-z])/, '$1 $2'));
+    speak(spokenInfo(p, code));
+  }
+  /* kalimat yang dibacakan: Anak -> kelas, Wali -> wali dari siapa, Guru -> wali kelas */
+  function spokenInfo(p, code) {
+    var inf = String(p.info || '').trim(), t = p.tipe, tail = '';
+    if (t === 'Wali') tail = inf ? 'Wali dari ' + inf : 'Wali murid';
+    else if (t === 'Guru') tail = !inf ? 'Guru' : (/wali\s*kelas/i.test(inf) ? inf : (/^(kelas\s*)?(tk|kb|ra|tpa|paud)\b/i.test(inf) ? 'Wali kelas ' + inf.replace(/^kelas\s*/i, '') : inf));
+    else if (inf) tail = /^kelas\b/i.test(inf) ? inf : 'Kelas ' + inf;
+    return p.nama + ' berada di kursi ' + String(code).replace(/(\d+)([A-Za-z])/, '$1 $2') + (tail ? ', ' + tail : '') + '.';
   }
 
   function openSeatForm(code) {
