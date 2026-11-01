@@ -58,7 +58,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .titles{grid-area:titles;min-width:0}
 .titles h1{min-height:1.1em;font-size:clamp(17px,3.6vw,40px);margin:0;font-weight:700;letter-spacing:-.01em;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .titles p{margin:6px 0 0;font-size:14.5px;font-weight:700;color:#5d5688;line-height:1.35}
-.titles p#school{margin-top:6px;font-size:18px;font-weight:800;color:#3b3470;letter-spacing:.005em}
+.titles p#school{margin-top:6px;font-family:'Fredoka','Nunito',system-ui,sans-serif;font-size:clamp(18px,2.6vw,28px);font-weight:700;line-height:1.15;color:#3b3470;letter-spacing:-.005em}
+.titles p#school:empty{display:none}
 .titles p.tagline{margin-top:2px;font-weight:600;color:#7a75a0}
 .logo-prev{width:96px;height:96px;border-radius:50%;background:#fff;border:3px solid var(--line);display:grid;place-items:center;overflow:hidden;margin:8px auto 4px;font-size:44px}
 .logo-prev img{width:100%;height:100%;object-fit:contain;display:block}
@@ -384,7 +385,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
        grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:'logo titles titles' 'btn btn btn' 'search search search'}
   .logo{width:72px;height:72px;font-size:36px;border-width:3px}
   .titles p{font-size:12.5px;margin-top:4px}
-  .titles p#school{font-size:15px}
+  .titles p#school{font-size:19px}
   #adminBtn{padding:12px 8px;font-size:13px}
   .hbtns .btn{font-size:13px;padding:12px 8px;white-space:normal;line-height:1.2;text-align:center}
   .search input{padding:12px 14px 12px 42px}
@@ -757,16 +758,18 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     });
 
   var S = { ver: 0, judul: '', buses: [], pnp: [], busId: null, admin: false, tok: '', mode: 'edit', moveFrom: null,
-            sekolah: '', logo: '', hl: null, sig: '', loaded: false, pending: 0, deep: null, suara: true, view: 'bus', rund: [], rtgl: '' };
+            sekolah: SCHOOL_NAME, logo: 'logo.png', hl: null, sig: '', loaded: false, pending: 0, deep: null, suara: true, view: 'bus', rund: [], rtgl: '' };
   var drag = null, hlTimer = null, confirmRes = null;
 
   /* ---------- util data ---------- */
-  function schoolName() { return S.sekolah || SCHOOL_NAME; }
-  function logoSrc() { return S.logo || 'logo.png'; }
+  var NOLOGO = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+  function schoolName() { return S.sekolah; }
+  function logoSrc() { return S.logo || NOLOGO; }
   function applyBrand() {
     var box = $('#logoBox');
     if (box) {
       box.innerHTML = '';
+      box.style.display = S.logo ? '' : 'none';
       var im = new Image();
       im.alt = 'Logo ' + schoolName(); im.width = 96; im.height = 96;
       im.onerror = function () { box.textContent = '🐥'; };
@@ -778,7 +781,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   function applyTitle() {
     var t = S.judul || ('Denah Bus ' + EVENT_NAME);
     $('#title').textContent = t;
-    document.title = t + ' · ' + schoolName();
+    document.title = t + (schoolName() ? ' · ' + schoolName() : '');
   }
   function cacheJudul() { try { localStorage.setItem('denah_judul', S.judul); } catch (x) { /* abaikan */ } }
   /* simpan denah (data publik saja) di perangkat ini agar langsung tampil saat dibuka lagi / tanpa sinyal */
@@ -985,7 +988,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   }
 
   function applyData(d) {
-    S.ver = Number(d.ver) || 0; S.judul = String(d.judul || ''); S.sekolah = String(d.sekolah || ''); S.logo = String(d.logo || ''); applyBrand(); applyTitle(); cacheJudul();
+    S.ver = Number(d.ver) || 0; S.judul = String(d.judul || ''); S.sekolah = d.sekolah == null ? SCHOOL_NAME : String(d.sekolah); S.logo = d.logo == null ? 'logo.png' : String(d.logo); applyBrand(); applyTitle(); cacheJudul();
     S.buses = d.buses; S.pnp = d.penumpang; S.rund = d.rundown || []; S.rtgl = /^\d{4}-\d{2}-\d{2}$/.test(String(d.runTgl || '')) ? String(d.runTgl) : ''; S.loaded = true;
     applyQueue();                         // tampilkan absen yang belum terkirim di atas data server
     if (!curBus()) S.busId = S.buses.length ? S.buses[0].id : null;
@@ -1753,9 +1756,9 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   function openJudulForm() {
     var cur = S.judul || ('Denah Bus ' + EVENT_NAME);
     modal('<h3>📝 Ubah Judul</h3><p class="muted">Judul ini tampil di bagian atas halaman untuk semua orang.</p>' +
-      '<form id="fJudul"><label>Judul<input type="text" name="judul" required maxlength="60" autocomplete="off" value="' + esc(cur) + '"></label>' +
+      '<form id="fJudul"><label>Judul<input type="text" name="judul" maxlength="60" autocomplete="off" value="' + esc(cur) + '"></label>' +
       '<div class="err" id="formErr"></div><div class="actions">' +
-      '<button type="button" class="btn ghost left" data-act="judulReset">Kembalikan bawaan</button>' +
+      '<button type="button" class="btn ghost left" data-act="judulReset">Reset</button>' +
       '<button type="button" class="btn ghost" data-close>Batal</button><button class="btn primary">Simpan</button></div></form>');
   }
 
@@ -1764,19 +1767,20 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   function openSekolahForm() {
     logoNew = null;
     modal('<h3>🏫 Nama Sekolah / Logo</h3><p class="muted">Tampil di bagian atas halaman, cetakan, PDF, dan gambar untuk semua orang.</p>' +
-      '<form id="fSekolah"><label>Nama sekolah<input type="text" name="sekolah" required maxlength="60" autocomplete="off" value="' + esc(schoolName()) + '"></label>' +
+      '<form id="fSekolah"><label>Nama sekolah<input type="text" name="sekolah" maxlength="60" autocomplete="off" value="' + esc(schoolName()) + '"></label>' +
       '<p class="muted" style="margin:12px 0 0"><b>Logo sekolah</b></p>' +
       '<div class="logo-prev" id="logoPrev"></div>' +
       '<input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp,image/gif" class="field">' +
       '<p class="muted" style="margin:6px 0 0;font-size:12.5px">Format PNG / JPG. Gambar otomatis dikecilkan. Sebaiknya persegi dengan latar transparan atau putih.</p>' +
       '<div class="err" id="formErr"></div><div class="actions">' +
-      '<button type="button" class="btn ghost left" data-act="logoReset">Kembalikan bawaan</button>' +
+      '<button type="button" class="btn ghost left" data-act="logoReset">Reset</button>' +
       '<button type="button" class="btn ghost" data-close>Batal</button><button class="btn primary">Simpan</button></div></form>');
-    showLogoPrev(S.logo || 'logo.png');
+    showLogoPrev(S.logo);
   }
   function showLogoPrev(src) {
     var b = $('#logoPrev'); if (!b) return;
     b.innerHTML = '';
+    if (!src) return;
     var im = new Image();
     im.onerror = function () { b.textContent = '🐥'; };
     im.src = src; b.appendChild(im);
@@ -1998,10 +2002,10 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     var list5 = mdl === '5' ? '<div class="tb-head"><div></div><div>Jam</div><div>Kegiatan</div><div>Keterangan</div></div>' : '';
     var head = kid
       ? '<div class="ex-head"><div class="ex-logo"><img src="' + esc(logoSrc()) + '" alt="" onerror="this.style.display=\'none\'"></div>' +
-        '<div><h1>Rundown Kegiatan</h1><p>' + esc(title) + ' · ' + esc(schoolName()) + '</p></div>' + BUS_SVG +
+        '<div><h1>Rundown Kegiatan</h1><p>' + esc(title) + (schoolName() ? ' · ' + esc(schoolName()) : '') + '</p></div>' + BUS_SVG +
         '<div class="ex-date">Dicetak: ' + esc(tgl) + '</div></div><div class="ex-rainbow"></div>'
       : '<div class="ex-head"><div class="ex-logo"><img src="' + esc(logoSrc()) + '" alt="" onerror="this.style.display=\'none\'"></div>' +
-        '<div><h1>Rundown Kegiatan</h1><p>' + esc(title) + ' · ' + esc(schoolName()) + '</p></div>' +
+        '<div><h1>Rundown Kegiatan</h1><p>' + esc(title) + (schoolName() ? ' · ' + esc(schoolName()) : '') + '</p></div>' +
         '<div class="ex-date">Dicetak: ' + esc(tgl) + '</div></div>';
     return '<div class="ex-root ex-run' + (kid ? ' kid' : '') + '">' + head +
       '<div class="ex-sub">' + (S.rtgl ? '<span>📅 ' + esc(tglLabel(S.rtgl)) + '</span>' : '') +
@@ -2226,12 +2230,13 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     }
     if (a === 'logoReset') {
       logoNew = '';
-      showLogoPrev('logo.png');
+      showLogoPrev('');
       var lf = $('#logoFile'); if (lf) lf.value = '';
+      var sn = $('#fSekolah input[name=sekolah]'); if (sn) { sn.value = ''; sn.focus(); }
       return;
     }
     if (a === 'judulReset') {
-      run(function () { return api.saveJudul(S.tok, ''); }, 'Judul dikembalikan');
+      var ji = $('#fJudul input[name=judul]'); if (ji) { ji.value = ''; ji.focus(); }
       return;
     }
     if (a === 'tglClear') {
