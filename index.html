@@ -2390,7 +2390,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
               if (namaB) t += ', dan ' + namaB + ' pindah kursi ' + eja(old);
               speak(t);
             } else {
-              speak('Kursi ' + eja(row.kursi) + ' berhasil terisi');
+              speak('Kursi ' + eja(row.kursi) + (old ? ' berhasil diubah' : ' berhasil terisi'));
             }
           });
     } else if (f.id === 'fBus') {
