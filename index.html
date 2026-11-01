@@ -629,7 +629,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
 .ex-head .ex-date{color:var(--exsub);font-size:13px;font-weight:800}
 .ex-root .ex-right{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:0 0 auto}
 .ex-root .ex-right .ex-date{margin:0;align-self:auto;text-align:right}
-.ex-root .ex-right .ex-bus-svg{position:relative;width:132px;height:70px;margin:0 78px 0 0;flex:0 0 auto}
+.ex-root .ex-right .ex-bus-svg{position:relative;width:132px;height:70px;margin:0;flex:0 0 auto}
 /* model "Denah Bus": hanya gambar denah, tanpa daftar nama, memenuhi 1 lembar */
 .ex-root.only .ex-body{display:block}
 .ex-root.only .ex-bus{display:flex;justify-content:center}
@@ -638,10 +638,10 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
 .ex-root.only .ex-info .ex-ket{margin:0 0 8px}
 .ex-root.only .ex-info .legend{justify-content:center}
 .ex-root.only .ex-info .ex-stats{margin:8px 0 0}
-.ex-root.only .bus{--sw:var(--osw,96px)}
+.ex-root.only .bus{--sw:96px}
 .ex-root.only .seat,.ex-root.only .doorseat{height:88px}
 .ex-root.only .seat .code{font-size:13px}
-.ex-root.only .seat .name{font-size:15.5px}
+.ex-root.only .seat .name{font-size:14px}
 .ex-bname{color:var(--exink);font-size:23px}
 .ex-ket{color:var(--exsub);font-size:13.5px;font-weight:800}
 .ex-root .legend{font-size:14px;font-weight:800;color:var(--exink);gap:14px}
@@ -2005,9 +2005,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     var legend = '<div class="legend"><span><i class="l-anak"></i>Anak</span><span><i class="l-wali"></i>Wali</span><span><i class="l-guru"></i>Guru</span><span><i class="l-empty"></i>Kosong</span></div>';
     var stats = '<div class="ex-stats">' + list.length + ' / ' + total + ' kursi terisi · Anak ' + cnt('Anak') + ' · Wali ' + cnt('Wali') + ' · Guru ' + cnt('Guru') + '</div>';
     if (mdl === '5') {
-      var nrm = Math.max(1, b.kiri + b.kanan), cols = Math.max(nrm, backN(b));
-      var osw = Math.floor(Math.min((800 - 34 - 16 - 8 * (nrm - 2)) / nrm, (800 - 8 * (cols - 1)) / cols, 150));
-      return '<div class="ex-root kid only" style="--osw:' + Math.max(70, osw) + 'px">' + head +
+      return '<div class="ex-root kid only">' + head +
         '<div class="ex-info"><h2 class="ex-bname">' + esc(b.nama) + '</h2>' + (b.ket ? '<p class="ex-ket">' + esc(b.ket) + '</p>' : '') + legend + stats + '</div>' +
         '<div class="ex-body"><div class="ex-bus">' + bus + '</div></div>' +
         '<div class="ex-foot"><span>Selamat bersenang-senang!</span></div></div>';
