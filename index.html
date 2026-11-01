@@ -435,6 +435,22 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
 .ex-item{display:flex;gap:8px;align-items:baseline;padding:3px 0;border-bottom:1px solid var(--line);font-size:11.5px;line-height:1.3}
 .ex-item .badge{min-width:34px;font-size:10.5px;padding:2px 4px;flex:0 0 auto}
 .ex-item small{color:var(--muted);font-weight:600}
+/* cetak rundown */
+.ex-run .ex-sub{display:flex;align-items:center;gap:10px;margin:0 0 14px;font-size:17px;font-weight:800}
+.ex-run .ex-sub span{background:var(--sun-soft);color:#7a5400;padding:4px 14px;border-radius:99px}
+.ex-run .ex-sub small{font-size:12px;font-weight:700;color:var(--muted)}
+.ex-run .ex-list{display:block}
+.ex-run .ex-list.two{column-count:2;column-gap:18px}
+.ex-run .ex-row{display:grid;grid-template-columns:132px minmax(0,1fr);gap:14px;align-items:start;padding:11px 0;border-bottom:1px solid var(--line);break-inside:avoid}
+.ex-run .ex-row:last-child{border-bottom:0}
+.ex-run .ex-jam{font-family:'Fredoka','Nunito',sans-serif;font-weight:600;font-size:19px;background:#fff6d6;border:2px solid var(--sun);border-radius:14px;text-align:center;padding:5px 6px;line-height:1.2;white-space:nowrap}
+.ex-run .ex-jam.txt{font-size:12px;white-space:normal;background:#f4f1ff;border-color:var(--line)}
+.ex-run .ex-keg{font-size:19px;font-weight:800;line-height:1.3;padding-top:3px}
+.ex-run .ex-keg small{display:block;margin-top:2px;font-size:14px;font-weight:600;color:var(--muted)}
+.ex-run .ex-list.two .ex-row{grid-template-columns:100px minmax(0,1fr);gap:8px;padding:8px 0}
+.ex-run .ex-list.two .ex-jam{font-size:14.5px}
+.ex-run .ex-list.two .ex-keg{font-size:14.5px}
+.ex-run .ex-list.two .ex-keg small{font-size:11.5px}
 .ex-root .bus-wrap{overflow:visible;padding:14px}
 .ex-root .bus{--sw:70px;padding:16px 22px 18px;border-width:5px;border-radius:60px 60px 24px 24px}
 .ex-root .bus{--padx:22px;--bo:13px}
@@ -1058,6 +1074,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     var list = S.rund || [], st = runStatus(list), now = wibNow();
     var btns = S.admin ? '<div class="rbtns no-print"><button class="btn primary small" data-act="addRun">＋ Tambah Kegiatan</button>' +
       '<button class="btn ghost small" data-act="tgl">📅 Tanggal Acara</button>' +
+      (list.length ? '<button class="btn ghost small" data-act="runPrint">🖨️ Cetak</button>' +
+                     '<button class="btn ghost small" data-act="runPdf">📄 Simpan PDF</button>' : '') +
       (list.length && st.indexOf('selesai') > -1 ? '<button class="btn ghost small" style="color:var(--danger)" data-act="runClearDone">🧹 Hapus yang Selesai</button>' : '') +
       (list.length ? '<button class="btn ghost small" style="color:var(--danger)" data-act="runClearAll">🗑️ Hapus Semua</button>' : '') + '</div>' : '';
     var jamOf = function (x) {
@@ -1586,17 +1604,38 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   var paperPick = 'A4';
   try { var pk = localStorage.getItem('denah_kertas'); if (PAPERS[pk]) paperPick = pk; } catch (x) { /* abaikan */ }
 
-  function openExportDialog(mode) {
-    var b = curBus();
-    if (!b) { toast('Belum ada bus untuk dicetak', 'err'); return; }
+  /* what: 'bus' (denah bus yang sedang dibuka) atau 'run' (rundown kegiatan) */
+  function openExportDialog(mode, what) {
+    var b = curBus(), run = what === 'run';
+    if (run ? !(S.rund && S.rund.length) : !b) { toast(run ? 'Belum ada kegiatan untuk dicetak' : 'Belum ada bus untuk dicetak', 'err'); return; }
     var pdf = mode === 'pdf';
-    modal('<h3>' + (pdf ? '📄 Simpan PDF' : '🖨️ Cetak') + '</h3>' +
-      '<p class="muted">' + esc(b.nama) + ' · seluruh denah dimuat dalam 1 lembar. Pilih ukuran kertas:</p>' +
+    modal('<h3>' + (pdf ? '📄 Simpan PDF' : '🖨️ Cetak') + (run ? ' Rundown' : '') + '</h3>' +
+      '<p class="muted">' + (run ? 'Rundown · ' + S.rund.length + ' kegiatan' : esc(b.nama)) + ' · seluruhnya dimuat dalam 1 lembar. Pilih ukuran kertas:</p>' +
       '<div class="seg" style="grid-template-columns:1fr 1fr">' +
       '<label><input type="radio" name="kertas" value="A4"' + (paperPick === 'A4' ? ' checked' : '') + '><span>A4<br><small>210 × 297 mm</small></span></label>' +
       '<label><input type="radio" name="kertas" value="F4"' + (paperPick === 'F4' ? ' checked' : '') + '><span>F4<br><small>215 × 330 mm</small></span></label></div>' +
       '<div class="actions"><button type="button" class="btn ghost" data-close>Batal</button>' +
-      '<button type="button" class="btn primary" data-act="' + (pdf ? 'doPdf' : 'doPrint') + '">' + (pdf ? 'Simpan PDF' : 'Cetak') + '</button></div>');
+      '<button type="button" class="btn primary" data-what="' + (run ? 'run' : 'bus') + '" data-act="' + (pdf ? 'doPdf' : 'doPrint') + '">' + (pdf ? 'Simpan PDF' : 'Cetak') + '</button></div>');
+  }
+
+  /* halaman cetak rundown: urut menurut jam, tanpa tombol dan tanpa tanda selesai (jadwal rencana) */
+  function exportRunHtml() {
+    var list = S.rund || [];
+    var title = S.judul || ('Denah Bus ' + EVENT_NAME);
+    var tgl = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    var rows = list.map(function (x) {
+      var t = parseJam(x.jam);
+      var jam = t.length ? '<div class="ex-jam">' + fmtMin(t[0]) + (t.length > 1 ? ' – ' + fmtMin(t[1]) : '') + '</div>'
+                         : '<div class="ex-jam txt">' + (x.jam ? esc(x.jam) : '–') + '</div>';
+      return '<div class="ex-row">' + jam + '<div class="ex-keg">' + esc(x.kegiatan) + (x.ket ? '<small>' + esc(x.ket) + '</small>' : '') + '</div></div>';
+    }).join('');
+    return '<div class="ex-root ex-run">' +
+      '<div class="ex-head"><div class="ex-logo"><img src="logo.png" alt="" onerror="this.style.display=\'none\'"></div>' +
+      '<div><h1>Rundown Kegiatan</h1><p>' + esc(title) + ' · ' + esc(SCHOOL_NAME) + '</p></div>' +
+      '<div class="ex-date">Dicetak: ' + esc(tgl) + '</div></div>' +
+      '<div class="ex-sub">' + (S.rtgl ? '<span>📅 ' + esc(tglLabel(S.rtgl)) + '</span>' : '') +
+      '<small>' + list.length + ' kegiatan · jadwal dapat berubah mengikuti keadaan di lapangan</small></div>' +
+      '<div class="ex-list' + (list.length > 18 ? ' two' : '') + '">' + rows + '</div></div>';
   }
 
   function exportHtml() {
@@ -1638,11 +1677,11 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     return Promise.all(jobs);
   }
 
-  function exportPrint(k) {
-    var P = PAPERS[k], MG = 10;
+  function exportPrint(k, what) {
+    var P = PAPERS[k], MG = 10, build = what === 'run' ? exportRunHtml : exportHtml;
     var probe = document.createElement('div');
     probe.style.cssText = 'position:fixed;left:-20000px;top:0';
-    probe.innerHTML = exportHtml();
+    probe.innerHTML = build();
     document.body.appendChild(probe);
     var H = probe.firstChild.offsetHeight;
     document.body.removeChild(probe);
@@ -1655,7 +1694,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     st.textContent = '@page{size:' + P.w + 'mm ' + P.h + 'mm;margin:0}';
     root.innerHTML = '<div class="ex-page" style="width:' + P.w + 'mm;height:' + (P.h - 1) + 'mm;padding:' + MG + 'mm">' +
       '<div style="width:' + EX_W + 'px;transform:scale(' + f + ');transform-origin:top left;margin-left:' + ((aw - EX_W * f) / 2) + 'px">' +
-      exportHtml() + '</div></div>';
+      build() + '</div></div>';
     waitImgs(root).then(function () {
       document.body.classList.add('printing');
       setTimeout(function () { window.print(); }, 150);
@@ -1679,14 +1718,14 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if (!(window.jspdf && window.jspdf.jsPDF)) p = p.then(function () { return loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'); });
     return p;
   }
-  function exportPdf(k) {
-    var P = PAPERS[k], MG = 10, b = curBus(), host = null;
+  function exportPdf(k, what) {
+    var P = PAPERS[k], MG = 10, b = curBus(), host = null, run = what === 'run';
     busy(true); toast('Membuat PDF…');
     loadPdfLibs().then(function () {
       host = document.createElement('div');
       host.id = 'exCap';
       host.style.cssText = 'position:fixed;left:-20000px;top:0;width:' + EX_W + 'px;background:#fff';
-      host.innerHTML = exportHtml();
+      host.innerHTML = run ? exportRunHtml() : exportHtml();
       document.body.appendChild(host);
       return waitImgs(host);
     }).then(function () {
@@ -1704,8 +1743,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       var w = aw, h = w / ratio;
       if (h > ah) { h = ah; w = h * ratio; }
       pdf.addImage(canvas.toDataURL('image/png'), 'PNG', (P.w - w) / 2, MG, w, h);
-      var nama = String(b.nama).replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'Bus';
-      pdf.save('Denah-Bus-' + nama + '-' + k + '.pdf');
+      var nama = String(b ? b.nama : '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'Bus';
+      pdf.save(run ? 'Rundown' + (S.rtgl ? '-' + S.rtgl : '') + '-' + k + '.pdf' : 'Denah-Bus-' + nama + '-' + k + '.pdf');
       toast('PDF tersimpan ✓');
     }).catch(function () {
       toast('PDF gagal dibuat. Coba tombol Cetak lalu pilih "Simpan sebagai PDF".', 'err');
@@ -1774,7 +1813,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       paperPick = kk;
       try { localStorage.setItem('denah_kertas', kk); } catch (x) { /* abaikan */ }
       closeModal();
-      if (a === 'doPdf') exportPdf(kk); else exportPrint(kk);
+      var wh = act.dataset.what === 'run' ? 'run' : 'bus';
+      if (a === 'doPdf') exportPdf(kk, wh); else exportPrint(kk, wh);
       return;
     }
     if (a === 'runDoneGo') {
@@ -2041,8 +2081,10 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       else if (a === 'belum') openBelumNaik();
       else if (a === 'judul') openJudulForm();
       else if (a === 'pin') openPinForm();
-      else if (a === 'print') openExportDialog('print');
-      else if (a === 'pdf') openExportDialog('pdf');
+      else if (a === 'print') openExportDialog('print', 'bus');
+      else if (a === 'pdf') openExportDialog('pdf', 'bus');
+      else if (a === 'runPrint') openExportDialog('print', 'run');
+      else if (a === 'runPdf') openExportDialog('pdf', 'run');
       else if (a === 'retry') { app.innerHTML = '<div class="skeleton"></div>'; load(); }
       else if (a === 'saveApi') {
         var v = ($('#apiInput').value || '').trim();
