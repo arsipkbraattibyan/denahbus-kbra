@@ -102,6 +102,10 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 @media (min-width:700px){.tools{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .tools .btn{width:100%;height:48px;min-height:48px;padding:0 10px;font-size:14px;line-height:1.15;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tools .btn.warn{color:var(--danger)}
+.menu-list{display:grid;gap:8px;margin:12px 0 4px}
+.menu-item{width:100%;flex-direction:column;align-items:flex-start;gap:1px;border-radius:18px;padding:11px 16px;text-align:left}
+.menu-item span{font-size:15px;font-weight:800}
+.menu-item small{font-size:12px;font-weight:600;color:var(--muted)}
 .tools .btn.warn:hover{border-color:var(--danger);color:var(--danger)}
 .tools .btn.on{background:var(--primary);color:#fff;border-color:var(--primary)}
 
@@ -1356,19 +1360,11 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       var mb = function (k, t) { return '<button class="btn ghost small' + (S.mode === k ? ' on' : '') + '" data-mode="' + k + '">' + t + '</button>'; };
       toolbar += '<div class="admin-bar no-print"><div class="hint"><b>Mode Guru aktif' + (S.guruNama ? ' · ' + esc(S.guruNama) : '') + '.</b> ' + MODE_HINT[S.mode] + '</div>' +
         '<div class="tools">' + mb('edit', '✏️ Isi / Ubah') + mb('move', '↔️ Pindah') + mb('absen', '✅ Absen Naik') +
+        (curBus() ? '<button class="btn ok small" data-act="belum">⏳ Belum Naik</button>' : '') +
         '<button class="btn ghost small warn" data-act="clearNaik">🧹 Clear Absen</button>' +
-        '<button class="btn primary small" data-act="addBus">＋ Tambah Bus</button>' +
-        (curBus() ? '<button class="btn ok small" data-act="belum">⏳ Belum Naik</button>' +
-                    '<button class="btn ghost small" data-act="editBus">⚙️ Atur Bus</button>' +
-                    '<button class="btn ghost small" data-act="import">📋 Impor Daftar</button>' : '') +
-        '<button class="btn ghost small" data-act="judul">📝 Ubah Judul</button>' +
-        '<button class="btn ghost small" data-act="sekolah">🏫 Nama Sekolah / Logo</button>' +
-        '<button class="btn ghost small" data-act="print">🖨️ Cetak</button>' +
-        '<button class="btn ghost small" data-act="pdf">📄 Simpan PDF</button>' +
-        '<button class="btn ghost small" data-act="img">🖼️ Simpan Gambar</button>' +
-        '<button class="btn ghost small" data-act="suara">' + (S.suara ? '🔊 Suara' : '🔇 Suara mati') + '</button>' +
-        '<button class="btn ghost small" data-act="log">🕘 Riwayat</button>' +
-        '<button class="btn ghost small" data-act="pin">🔑 Ganti PIN</button></div></div>';    }
+        '<button class="btn primary small" data-act="menuBus">🚌 Bus ▾</button>' +
+        '<button class="btn ghost small" data-act="menuShare">🖨️ Cetak / Simpan ▾</button>' +
+        '<button class="btn ghost small" data-act="menuSet">⚙️ Pengaturan ▾</button></div></div>';    }
 
     if (!S.buses.length) {
       app.innerHTML = toolbar + '<div class="empty-state"><div class="big">🚌</div><h2>Belum ada denah bus</h2><p>' +
@@ -1488,6 +1484,36 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       '<label>PIN<input type="password" name="pin" inputmode="numeric" autocomplete="off" required></label>' +
       '<div class="err" id="err"></div><div class="actions"><button type="button" class="btn ghost" data-close>Batal</button>' +
       '<button class="btn primary">Masuk</button></div></form>');
+  }
+
+  function openMenu(kind) {
+    var it = function (act, t, d) { return '<button class="btn ghost menu-item" data-sub="' + act + '"><span>' + t + '</span><small>' + d + '</small></button>'; };
+    var h = '', title = '';
+    if (kind === 'bus') {
+      title = '🚌 Bus & Daftar';
+      h = it('addBus', '＋ Tambah Bus', 'Buat denah bus baru') +
+        (curBus() ? it('editBus', '⚙️ Atur Bus', 'Nama, jumlah baris, susunan kursi') +
+                    it('import', '📋 Impor Daftar', 'Tempel daftar nama dari Excel / catatan') : '');
+    } else if (kind === 'share') {
+      title = '🖨️ Cetak / Simpan';
+      h = it('print', '🖨️ Cetak', 'Cetak denah di kertas A4 / F4') +
+        it('pdf', '📄 Simpan PDF', 'Unduh denah sebagai file PDF') +
+        it('img', '🖼️ Simpan Gambar', 'Unduh denah sebagai gambar');
+    } else {
+      title = '⚙️ Pengaturan';
+      h = it('judul', '📝 Ubah Judul', 'Judul besar di bagian atas') +
+        it('sekolah', '🏫 Sekolah / Logo', 'Nama sekolah dan logo') +
+        it('suara', S.suara ? '🔊 Suara: nyala' : '🔇 Suara: mati', 'Ketuk untuk menyalakan / mematikan') +
+        it('log', '🕘 Riwayat', 'Catatan perubahan oleh guru') +
+        it('pin', '🔑 Ganti PIN', 'Ubah PIN guru');
+    }
+    modal('<h3>' + title + '</h3><div class="menu-list">' + h + '</div><div class="actions"><button class="btn ghost" data-close>Tutup</button></div>');
+  }
+  function runSub(act) {
+    closeModal();
+    var tmp = document.createElement('button');
+    tmp.dataset.act = act;
+    app.appendChild(tmp); tmp.click(); tmp.remove();
   }
 
   function openInfo(code) {
@@ -2392,6 +2418,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if (e.key === 'Escape' && modalEl.classList.contains('open')) closeModal();
   });
   modalEl.addEventListener('click', function (e) {
+    var sb = e.target.closest('[data-sub]');
+    if (sb) { runSub(sb.dataset.sub); return; }
     var pb = e.target.closest('.pickbtn');
     if (pb) { e.preventDefault(); openPick(pb); return; }
     var tb = e.target.closest('.tbtn');                      // tombol ▲ ▼ pada pemilih jam
@@ -2485,6 +2513,9 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       else if (a === 'tgl') openTglForm();
       else if (a === 'runClearDone') clearRundown(true);
       else if (a === 'runClearAll') clearRundown(false);
+      else if (a === 'menuBus') openMenu('bus');
+      else if (a === 'menuShare') openMenu('share');
+      else if (a === 'menuSet') openMenu('set');
       else if (a === 'addBus') openBusForm(false);
       else if (a === 'clearNaik') clearNaikAll();
       else if (a === 'suara') { S.suara = !S.suara; try { localStorage.setItem('denah_suara', S.suara ? '1' : '0'); } catch (x) { /* abaikan */ } render(); if (S.suara) speak('Suara aktif'); }
