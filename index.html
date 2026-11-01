@@ -1314,8 +1314,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     var cls = tipeCls(p.tipe);
     modal('<div class="info-card"><div class="seat-big ' + cls + '">' + code + '</div><div><h4>' + esc(p.nama) + '</h4><small>' +
       descOf(p) + '</small><br><small>' + esc(b.nama) + ' · Kursi ' + code + (p.naik ? ' · ✅ sudah naik' : '') + '</small></div></div>' +
-      '<div class="actions"><button class="btn ghost" data-act="share" data-nama="' + esc(p.nama) + '">🔗 Salin tautan</button>' +
-      '<button class="btn primary" data-close>Tutup</button></div>');
+      '<div class="actions"><button class="btn primary" data-close>Tutup</button></div>');
   }
 
   function openSeatForm(code) {
@@ -1768,12 +1767,6 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       busy(true);
       load({ force: true, silent: true }).then(function () { busy(false); openBelumNaik(); });
       return;
-    }
-    if (a === 'share') {
-      var url = location.origin + location.pathname + '?cari=' + encodeURIComponent(act.dataset.nama);
-      var done = function () { toast('Tautan disalin ✓'); };
-      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function () { prompt('Salin tautan ini:', url); });
-      else prompt('Salin tautan ini:', url);
     }
     if (a === 'doPdf' || a === 'doPrint') {
       var chosen = modalEl.querySelector('input[name=kertas]:checked');
