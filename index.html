@@ -451,6 +451,86 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
 .ex-run .ex-list.two .ex-jam{font-size:14.5px}
 .ex-run .ex-list.two .ex-keg{font-size:14.5px}
 .ex-run .ex-list.two .ex-keg small{font-size:11.5px}
+/* model cetak rundown untuk anak-anak (m2 .. m5); m1 = klasik */
+.ex-run .c0{--bg:#ffe3ee;--bd:#ff6fa5;--tx:#8c1b4b}
+.ex-run .c1{--bg:#fff0c2;--bd:#ffab1f;--tx:#7a4400}
+.ex-run .c2{--bg:#d5f7ee;--bd:#22c1a0;--tx:#09594a}
+.ex-run .c3{--bg:#e3efff;--bd:#4d8dff;--tx:#1d4fa8}
+.ex-run .c4{--bg:#efeaff;--bd:#6c4df6;--tx:#3b2a99}
+.ex-run .c5{--bg:#ecfae0;--bd:#7ac143;--tx:#3b6b14}
+.ex-run.kid .ex-head{border-bottom:0;padding-bottom:0;margin-bottom:10px;position:relative}
+.ex-run.kid .ex-head h1{font-family:'Fredoka','Nunito',sans-serif;font-size:36px;color:#3b2a99}
+.ex-run.kid .ex-bus-svg{position:relative;width:132px;height:70px;margin-left:auto;margin-right:14px;flex:0 0 auto}
+.ex-bus-svg i{position:absolute;display:block;box-sizing:border-box}
+.ex-bus-svg .bb{left:3px;top:8px;width:126px;height:46px;border-radius:16px;background:#ffc93c;border:3px solid #fff}
+.ex-bus-svg .bs{left:6px;top:38px;width:120px;height:5px;background:#e8a800}
+.ex-bus-svg .bw{top:17px;width:20px;height:16px;border-radius:4px;background:#bfe6ff}
+.ex-bus-svg .w1{left:14px}.ex-bus-svg .w2{left:38px}.ex-bus-svg .w3{left:62px}.ex-bus-svg .w4{left:86px}
+.ex-bus-svg .w5{left:110px;top:22px;width:13px;height:14px}
+.ex-bus-svg .bt{top:45px;width:22px;height:22px;border-radius:50%;background:#26223d;border:3px solid #fff}
+.ex-bus-svg .t1{left:23px}.ex-bus-svg .t2{left:87px}
+.ex-bus-svg .bt u{position:absolute;left:5px;top:5px;width:6px;height:6px;border-radius:50%;background:#9a95b8}
+.ex-run.kid .ex-date{margin-left:0;align-self:flex-start}
+.ex-run.kid .ex-rainbow{height:10px;border-radius:6px;margin:0 0 14px;background:linear-gradient(90deg,#ff6fa5 0 17%,#ffab1f 17% 34%,#ffd54a 34% 50%,#7ac143 50% 67%,#4d8dff 67% 84%,#6c4df6 84% 100%)}
+.ex-run.kid .ex-sub span{background:#fff;border:3px solid var(--sun)}
+.ex-run .ex-foot{margin-top:16px;text-align:center}
+.ex-run .ex-foot span{display:inline-block;font-family:'Fredoka','Nunito',sans-serif;font-weight:600;font-size:15px;color:#3b2a99;background:#efeaff;border-radius:99px;padding:6px 22px}
+/* m2: jalur petualangan */
+.ex-run .tl-row{display:grid;grid-template-columns:128px 56px minmax(0,1fr);align-items:start;break-inside:avoid}
+.ex-run .tl-time{text-align:right;padding-top:9px;font-family:'Fredoka','Nunito',sans-serif;font-weight:600;font-size:21px;color:var(--tx);line-height:1.1}
+.ex-run .tl-time small{display:block;font-size:14px;color:#8a85a8;font-weight:600;margin-top:2px}
+.ex-run .tl-dot{position:relative;align-self:stretch;min-height:60px}
+.ex-run .tl-dot::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:6px;margin-left:-3px;background:repeating-linear-gradient(180deg,#cfc8f2 0 8px,transparent 8px 14px)}
+.ex-run .tl-row:first-child .tl-dot::before{top:26px}
+.ex-run .tl-row:last-child .tl-dot::before{bottom:auto;height:26px}
+.ex-run .tl-dot i{position:absolute;left:50%;top:4px;width:38px;height:38px;margin-left:-19px;border-radius:50%;background:var(--bd);color:#fff;border:4px solid #fff;box-shadow:0 0 0 3px var(--bd);font-style:normal;font-family:'Fredoka','Nunito',sans-serif;font-weight:600;font-size:17px;line-height:30px;text-align:center;box-sizing:content-box;width:30px;height:30px;margin-left:-19px}
+.ex-run .tl-card{margin:2px 0 12px;background:var(--bg);border-radius:20px;border-left:10px solid var(--bd);padding:10px 16px}
+.ex-run .tl-card b{display:block;font-size:19px;font-weight:800;line-height:1.3}
+.ex-run .tl-card small{display:block;margin-top:2px;font-size:14px;font-weight:600;color:#5d5688}
+/* m3: pelangi */
+.ex-run .pg-list{display:block}
+.ex-run .pg-list.two{column-count:2;column-gap:16px}
+.ex-run .pg-row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:14px;align-items:center;background:var(--bg);border:3px solid var(--bd);border-radius:26px;padding:10px 14px;margin-bottom:10px;break-inside:avoid}
+.ex-run .pg-time{background:#fff;border:3px solid var(--bd);border-radius:99px;text-align:center;padding:6px 4px;font-family:'Fredoka','Nunito',sans-serif;font-weight:600;font-size:19px;color:var(--tx);white-space:nowrap}
+.ex-run .pg-time.txt{font-size:13px;white-space:normal;border-radius:18px}
+.ex-run .pg-keg{font-size:19px;font-weight:800;line-height:1.3}
+.ex-run .pg-keg small{display:block;margin-top:2px;font-size:14px;font-weight:600;color:#5d5688}
+.ex-run .pg-list.two .pg-row{grid-template-columns:116px minmax(0,1fr);gap:10px;padding:8px 10px}
+.ex-run .pg-list.two .pg-time{font-size:15px}
+.ex-run .pg-list.two .pg-keg{font-size:15px}
+.ex-run .pg-list.two .pg-keg small{font-size:11.5px}
+/* m4: kartu bintang */
+.ex-run .kt-list{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ex-run .kt-list.three{grid-template-columns:1fr 1fr 1fr;gap:10px}
+.ex-run .kt-card{position:relative;background:var(--bg);border:3px solid var(--bd);border-radius:24px;padding:0 14px 12px;overflow:hidden}
+.ex-run .kt-time{margin:0 -14px 10px;background:var(--bd);color:#fff;padding:7px 14px 7px 58px;font-family:'Fredoka','Nunito',sans-serif;font-weight:600;font-size:20px;white-space:nowrap}
+.ex-run .kt-no{position:absolute;left:10px;top:5px;width:38px;height:38px;border-radius:50%;background:#fff;color:var(--tx);font-family:'Fredoka','Nunito',sans-serif;font-weight:600;font-size:19px;line-height:38px;text-align:center}
+.ex-run .kt-card b{display:block;font-size:18px;font-weight:800;line-height:1.3}
+.ex-run .kt-card small{display:block;margin-top:3px;font-size:13.5px;font-weight:600;color:#5d5688}
+.ex-run .kt-list.three .kt-time{font-size:16px;padding-left:52px}
+.ex-run .kt-list.three .kt-card b{font-size:15px}
+.ex-run .kt-list.three .kt-card small{font-size:11.5px}
+/* m5: tabel ceria */
+.ex-run .tb-head,.ex-run .tb-row{display:grid;grid-template-columns:54px 168px minmax(0,1.25fr) minmax(0,1fr);gap:0;align-items:center}
+.ex-run .tb-head{background:#6c4df6;color:#fff;border-radius:18px 18px 0 0;font-family:'Fredoka','Nunito',sans-serif;font-weight:600;font-size:16px}
+.ex-run .tb-head div{padding:10px 12px}
+.ex-run .tb-row{background:var(--bg);border-bottom:3px solid #fff;break-inside:avoid}
+.ex-run .tb-row:last-child{border-radius:0 0 18px 18px;border-bottom:0}
+.ex-run .tb-row div{padding:9px 12px}
+.ex-run .tb-no{text-align:center;padding:9px 0!important}
+.ex-run .tb-no i{display:inline-block;width:30px;height:30px;border-radius:50%;background:var(--bd);color:#fff;font-style:normal;font-family:'Fredoka','Nunito',sans-serif;font-weight:600;font-size:15px;line-height:30px;text-align:center}
+.ex-run .tb-jam{font-family:'Fredoka','Nunito',sans-serif;font-weight:600;font-size:18px;color:var(--tx);white-space:nowrap}
+.ex-run .tb-keg{font-size:17px;font-weight:800;line-height:1.3}
+.ex-run .tb-ket{font-size:13.5px;font-weight:600;color:#5d5688;line-height:1.3}
+/* pilihan model di dialog */
+.mdl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.mdl label{margin:0}
+.mdl input{display:none}
+.mdl span{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:16px;border:2px solid var(--line);cursor:pointer;font-weight:800;font-size:13px;line-height:1.2}
+.mdl span small{display:block;margin-top:2px;font-size:11px;font-weight:600;color:var(--muted)}
+.mdl svg{flex:0 0 auto;border-radius:6px;border:1px solid var(--line);background:#fff}
+.mdl input:checked + span{border-color:var(--primary);background:var(--primary-soft);color:var(--primary)}
+.mdl label:last-child:nth-child(odd){grid-column:1 / -1}
 .ex-root .bus-wrap{overflow:visible;padding:14px}
 .ex-root .bus{--sw:70px;padding:16px 22px 18px;border-width:5px;border-radius:60px 60px 24px 24px}
 .ex-root .bus{--padx:22px;--bo:13px}
@@ -1610,7 +1690,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if (run ? !(S.rund && S.rund.length) : !b) { toast(run ? 'Belum ada kegiatan untuk dicetak' : 'Belum ada bus untuk dicetak', 'err'); return; }
     var pdf = mode === 'pdf';
     modal('<h3>' + (pdf ? '📄 Simpan PDF' : '🖨️ Cetak') + (run ? ' Rundown' : '') + '</h3>' +
-      '<p class="muted">' + (run ? 'Rundown · ' + S.rund.length + ' kegiatan' : esc(b.nama)) + ' · seluruhnya dimuat dalam 1 lembar. Pilih ukuran kertas:</p>' +
+      '<p class="muted">' + (run ? 'Rundown · ' + S.rund.length + ' kegiatan' : esc(b.nama)) + ' · seluruhnya dimuat dalam 1 lembar.</p>' +
+      (run ? '<p class="muted" style="margin:0"><b>Pilih model:</b></p>' + modelPicker() + '<p class="muted" style="margin:14px 0 0"><b>Pilih ukuran kertas:</b></p>' : '<p class="muted" style="margin:0">Pilih ukuran kertas:</p>') +
       '<div class="seg" style="grid-template-columns:1fr 1fr">' +
       '<label><input type="radio" name="kertas" value="A4"' + (paperPick === 'A4' ? ' checked' : '') + '><span>A4<br><small>210 × 297 mm</small></span></label>' +
       '<label><input type="radio" name="kertas" value="F4"' + (paperPick === 'F4' ? ' checked' : '') + '><span>F4<br><small>215 × 330 mm</small></span></label></div>' +
@@ -1618,52 +1699,95 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       '<button type="button" class="btn primary" data-what="' + (run ? 'run' : 'bus') + '" data-act="' + (pdf ? 'doPdf' : 'doPrint') + '">' + (pdf ? 'Simpan PDF' : 'Cetak') + '</button></div>');
   }
 
-  /* halaman cetak rundown: urut menurut jam, tanpa tombol dan tanpa tanda selesai (jadwal rencana) */
-  function exportRunHtml() {
-    var list = S.rund || [];
-    var title = S.judul || ('Denah Bus ' + EVENT_NAME);
-    var tgl = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-    var rows = list.map(function (x) {
-      var t = parseJam(x.jam);
-      var jam = t.length ? '<div class="ex-jam">' + fmtMin(t[0]) + (t.length > 1 ? ' – ' + fmtMin(t[1]) : '') + '</div>'
-                         : '<div class="ex-jam txt">' + (x.jam ? esc(x.jam) : '–') + '</div>';
-      return '<div class="ex-row">' + jam + '<div class="ex-keg">' + esc(x.kegiatan) + (x.ket ? '<small>' + esc(x.ket) + '</small>' : '') + '</div></div>';
-    }).join('');
-    return '<div class="ex-root ex-run">' +
-      '<div class="ex-head"><div class="ex-logo"><img src="logo.png" alt="" onerror="this.style.display=\'none\'"></div>' +
-      '<div><h1>Rundown Kegiatan</h1><p>' + esc(title) + ' · ' + esc(SCHOOL_NAME) + '</p></div>' +
-      '<div class="ex-date">Dicetak: ' + esc(tgl) + '</div></div>' +
-      '<div class="ex-sub">' + (S.rtgl ? '<span>📅 ' + esc(tglLabel(S.rtgl)) + '</span>' : '') +
-      '<small>' + list.length + ' kegiatan · jadwal dapat berubah mengikuti keadaan di lapangan</small></div>' +
-      '<div class="ex-list' + (list.length > 18 ? ' two' : '') + '">' + rows + '</div></div>';
+  /* ---------- model cetak rundown ---------- */
+  var RUN_MODELS = [
+    { id: '1', nama: 'Klasik', ket: 'Daftar rapi, kotak jam kuning' },
+    { id: '2', nama: 'Jalur Petualangan', ket: 'Garis waktu bernomor' },
+    { id: '3', nama: 'Pelangi', ket: 'Baris berwarna-warni' },
+    { id: '4', nama: 'Kartu Ceria', ket: 'Kartu bernomor, 2 kolom' },
+    { id: '5', nama: 'Tabel Ceria', ket: 'Tabel dengan warna' }
+  ];
+  var modelPick = '1';
+  try { var pm = localStorage.getItem('denah_model'); if (/^[1-5]$/.test(pm)) modelPick = pm; } catch (x) { /* abaikan */ }
+
+  /* gambar kecil model di dialog */
+  function modelThumb(id) {
+    var C = ['#ff6fa5', '#ffab1f', '#22c1a0', '#4d8dff', '#6c4df6'], r = '';
+    var i;
+    if (id === '1') {
+      for (i = 0; i < 5; i++) r += '<rect x="5" y="' + (10 + i * 11) + '" width="13" height="7" rx="3" fill="#fff6d6" stroke="#ffc93c"/><rect x="22" y="' + (11 + i * 11) + '" width="19" height="3" rx="1.5" fill="#2b2350"/><rect x="22" y="' + (16 + i * 11) + '" width="13" height="2" rx="1" fill="#b7b2d6"/>';
+    } else if (id === '2') {
+      r += '<line x1="23" y1="12" x2="23" y2="56" stroke="#cfc8f2" stroke-width="2" stroke-dasharray="3 2"/>';
+      for (i = 0; i < 4; i++) r += '<circle cx="23" cy="' + (14 + i * 13) + '" r="5" fill="' + C[i] + '"/><rect x="31" y="' + (9 + i * 13) + '" width="12" height="9" rx="3" fill="' + C[i] + '" opacity=".35"/><rect x="4" y="' + (12 + i * 13) + '" width="12" height="3" rx="1.5" fill="#6c4df6"/>';
+    } else if (id === '3') {
+      for (i = 0; i < 5; i++) r += '<rect x="4" y="' + (9 + i * 11) + '" width="40" height="9" rx="4.5" fill="' + C[i] + '" opacity=".3" stroke="' + C[i] + '"/><rect x="7" y="' + (11 + i * 11) + '" width="12" height="5" rx="2.5" fill="#fff"/>';
+    } else if (id === '4') {
+      for (i = 0; i < 6; i++) { var cx = 4 + (i % 2) * 21, cy = 9 + Math.floor(i / 2) * 17;
+        r += '<rect x="' + cx + '" y="' + cy + '" width="19" height="14" rx="3.5" fill="' + C[i % 5] + '" opacity=".3" stroke="' + C[i % 5] + '"/><rect x="' + cx + '" y="' + cy + '" width="19" height="5" rx="2" fill="' + C[i % 5] + '"/>'; }
+    } else {
+      r += '<rect x="4" y="8" width="40" height="7" rx="3" fill="#6c4df6"/>';
+      for (i = 0; i < 5; i++) r += '<rect x="4" y="' + (17 + i * 8) + '" width="40" height="6.5" fill="' + C[i] + '" opacity=".3"/><circle cx="9" cy="' + (20 + i * 8) + '" r="2" fill="' + C[i] + '"/>';
+    }
+    return '<svg width="44" height="58" viewBox="0 0 48 64" aria-hidden="true">' + r + '</svg>';
+  }
+  function modelPicker() {
+    return '<div class="mdl">' + RUN_MODELS.map(function (m) {
+      return '<label><input type="radio" name="model" value="' + m.id + '"' + (modelPick === m.id ? ' checked' : '') + '><span>' +
+        modelThumb(m.id) + '<b>' + m.nama + '<small>' + m.ket + '</small></b></span></label>';
+    }).join('') + '</div>';
   }
 
-  function exportHtml() {
-    var b = curBus(), m = paxMap(b.id);
-    var list = S.pnp.filter(function (p) { return p.busId === b.id; })
-      .sort(function (x, y) { return seatKey(x.kursi) - seatKey(y.kursi); });
-    var cnt = function (t) { return list.filter(function (p) { return p.tipe === t; }).length; };
-    var total = seatsOf(b).length;
-    var keepA = S.admin, keepH = S.hl, keepM = S.moveFrom;
-    S.admin = false; S.hl = null; S.moveFrom = null;
-    var bus = busHtml(b, m);
-    S.admin = keepA; S.hl = keepH; S.moveFrom = keepM;
+  /* bus kecil di judul: digambar dengan kotak CSS (pembuat PDF tidak menampilkan SVG bawaan halaman dengan baik) */
+  var BUS_SVG = '<div class="ex-bus-svg"><i class="bb"></i><i class="bs"></i>' +
+    '<i class="bw w1"></i><i class="bw w2"></i><i class="bw w3"></i><i class="bw w4"></i><i class="bw w5"></i>' +
+    '<i class="bt t1"><u></u></i><i class="bt t2"><u></u></i></div>';
+
+  /* halaman cetak rundown: urut menurut jam, tanpa tombol dan tanpa tanda selesai (jadwal rencana).
+     mdl = '1' (klasik) sampai '5' (model untuk anak-anak) */
+  function exportRunHtml(mdl) {
+    mdl = /^[1-5]$/.test(mdl) ? mdl : '1';
+    var list = S.rund || [], n = list.length;
     var title = S.judul || ('Denah Bus ' + EVENT_NAME);
     var tgl = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-    var items = list.length ? list.map(function (p) {
-      return '<div class="ex-item"><span class="badge ' + tipeCls(p.tipe) + '">' + esc(p.kursi) + '</span>' +
-        '<span><b>' + esc(p.nama) + '</b> <small>' + descOf(p) + '</small></span></div>';
-    }).join('') : '<div class="muted" style="font-size:12px">Belum ada penumpang.</div>';
-    return '<div class="ex-root">' +
-      '<div class="ex-head"><div class="ex-logo"><img src="logo.png" alt="" onerror="this.style.display=\'none\'"></div>' +
-      '<div><h1>' + esc(title) + '</h1><p>' + esc(SCHOOL_NAME) + '</p></div>' +
-      '<div class="ex-date">Dicetak: ' + esc(tgl) + '</div></div>' +
-      '<div class="ex-body"><div class="ex-bus">' + bus + '</div>' +
-      '<div class="ex-side"><h2 class="ex-bname">' + esc(b.nama) + '</h2>' +
-      (b.ket ? '<p class="ex-ket">' + esc(b.ket) + '</p>' : '') +
-      '<div class="legend"><span><i class="l-anak"></i>Anak</span><span><i class="l-wali"></i>Wali</span><span><i class="l-guru"></i>Guru</span><span><i class="l-empty"></i>Kosong</span></div>' +
-      '<div class="ex-stats">' + list.length + ' / ' + total + ' kursi terisi · Anak ' + cnt('Anak') + ' · Wali ' + cnt('Wali') + ' · Guru ' + cnt('Guru') + '</div>' +
-      items + '</div></div></div>';
+    var kid = mdl !== '1';
+    var jamTxt = function (x) {
+      var t = parseJam(x.jam);
+      return t.length ? { a: fmtMin(t[0]), b: t.length > 1 ? fmtMin(t[1]) : '', ok: true } : { a: x.jam ? esc(x.jam) : '–', b: '', ok: false };
+    };
+    var rng = function (j) { return j.a + (j.b ? ' – ' + j.b : ''); };
+    var body = '';
+    list.forEach(function (x, i) {
+      var j = jamTxt(x), c = ' c' + (i % 6), ket = x.ket ? '<small>' + esc(x.ket) + '</small>' : '', keg = esc(x.kegiatan);
+      if (mdl === '1') {
+        body += '<div class="ex-row">' + (j.ok ? '<div class="ex-jam">' + rng(j) + '</div>' : '<div class="ex-jam txt">' + j.a + '</div>') +
+          '<div class="ex-keg">' + keg + ket + '</div></div>';
+      } else if (mdl === '2') {
+        body += '<div class="tl-row' + c + '"><div class="tl-time">' + j.a + (j.b ? '<small>s/d ' + j.b + '</small>' : '') + '</div>' +
+          '<div class="tl-dot"><i>' + (i + 1) + '</i></div><div class="tl-card"><b>' + keg + '</b>' + ket + '</div></div>';
+      } else if (mdl === '3') {
+        body += '<div class="pg-row' + c + '"><div class="pg-time' + (j.ok ? '' : ' txt') + '">' + rng(j) + '</div><div class="pg-keg">' + keg + ket + '</div></div>';
+      } else if (mdl === '4') {
+        body += '<div class="kt-card' + c + '"><div class="kt-time">' + rng(j) + '</div><span class="kt-no">' + (i + 1) + '</span><b>' + keg + '</b>' + ket + '</div>';
+      } else {
+        body += '<div class="tb-row' + c + '"><div class="tb-no"><i>' + (i + 1) + '</i></div><div class="tb-jam">' + rng(j) + '</div>' +
+          '<div class="tb-keg">' + keg + '</div><div class="tb-ket">' + (x.ket ? esc(x.ket) : '') + '</div></div>';
+      }
+    });
+    var wrapCls = { '1': 'ex-list' + (n > 18 ? ' two' : ''), '2': 'tl-list', '3': 'pg-list' + (n > 16 ? ' two' : ''),
+      '4': 'kt-list' + (n > 16 ? ' three' : ''), '5': 'tb-list' }[mdl];
+    var list5 = mdl === '5' ? '<div class="tb-head"><div></div><div>Jam</div><div>Kegiatan</div><div>Keterangan</div></div>' : '';
+    var head = kid
+      ? '<div class="ex-head"><div class="ex-logo"><img src="logo.png" alt="" onerror="this.style.display=\'none\'"></div>' +
+        '<div><h1>Rundown Kegiatan</h1><p>' + esc(title) + ' · ' + esc(SCHOOL_NAME) + '</p></div>' + BUS_SVG +
+        '<div class="ex-date">Dicetak: ' + esc(tgl) + '</div></div><div class="ex-rainbow"></div>'
+      : '<div class="ex-head"><div class="ex-logo"><img src="logo.png" alt="" onerror="this.style.display=\'none\'"></div>' +
+        '<div><h1>Rundown Kegiatan</h1><p>' + esc(title) + ' · ' + esc(SCHOOL_NAME) + '</p></div>' +
+        '<div class="ex-date">Dicetak: ' + esc(tgl) + '</div></div>';
+    return '<div class="ex-root ex-run' + (kid ? ' kid' : '') + '">' + head +
+      '<div class="ex-sub">' + (S.rtgl ? '<span>📅 ' + esc(tglLabel(S.rtgl)) + '</span>' : '') +
+      '<small>' + n + ' kegiatan · jadwal dapat berubah mengikuti keadaan di lapangan</small></div>' +
+      list5 + '<div class="' + wrapCls + '">' + body + '</div>' +
+      (kid ? '<div class="ex-foot"><span>Selamat bersenang-senang!</span></div>' : '') + '</div>';
   }
 
   function mmPx(mm) { return mm * 96 / 25.4; }
@@ -1677,8 +1801,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     return Promise.all(jobs);
   }
 
-  function exportPrint(k, what) {
-    var P = PAPERS[k], MG = 10, build = what === 'run' ? exportRunHtml : exportHtml;
+  function exportPrint(k, what, mdl) {
+    var P = PAPERS[k], MG = 10, build = what === 'run' ? function () { return exportRunHtml(mdl); } : exportHtml;
     var probe = document.createElement('div');
     probe.style.cssText = 'position:fixed;left:-20000px;top:0';
     probe.innerHTML = build();
@@ -1718,14 +1842,14 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if (!(window.jspdf && window.jspdf.jsPDF)) p = p.then(function () { return loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'); });
     return p;
   }
-  function exportPdf(k, what) {
+  function exportPdf(k, what, mdl) {
     var P = PAPERS[k], MG = 10, b = curBus(), host = null, run = what === 'run';
     busy(true); toast('Membuat PDF…');
     loadPdfLibs().then(function () {
       host = document.createElement('div');
       host.id = 'exCap';
       host.style.cssText = 'position:fixed;left:-20000px;top:0;width:' + EX_W + 'px;background:#fff';
-      host.innerHTML = run ? exportRunHtml() : exportHtml();
+      host.innerHTML = run ? exportRunHtml(mdl) : exportHtml();
       document.body.appendChild(host);
       return waitImgs(host);
     }).then(function () {
@@ -1744,7 +1868,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       if (h > ah) { h = ah; w = h * ratio; }
       pdf.addImage(canvas.toDataURL('image/png'), 'PNG', (P.w - w) / 2, MG, w, h);
       var nama = String(b ? b.nama : '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'Bus';
-      pdf.save(run ? 'Rundown' + (S.rtgl ? '-' + S.rtgl : '') + '-' + k + '.pdf' : 'Denah-Bus-' + nama + '-' + k + '.pdf');
+      pdf.save(run ? 'Rundown' + (S.rtgl ? '-' + S.rtgl : '') + '-' + (mdl === '1' ? '' : 'M' + mdl + '-') + k + '.pdf' : 'Denah-Bus-' + nama + '-' + k + '.pdf');
       toast('PDF tersimpan ✓');
     }).catch(function () {
       toast('PDF gagal dibuat. Coba tombol Cetak lalu pilih "Simpan sebagai PDF".', 'err');
@@ -1812,9 +1936,10 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       var kk = chosen && PAPERS[chosen.value] ? chosen.value : 'A4';
       paperPick = kk;
       try { localStorage.setItem('denah_kertas', kk); } catch (x) { /* abaikan */ }
+      var wh = act.dataset.what === 'run' ? 'run' : 'bus', mm0 = modalEl.querySelector('input[name=model]:checked'), md = mm0 ? mm0.value : '1';
       closeModal();
-      var wh = act.dataset.what === 'run' ? 'run' : 'bus';
-      if (a === 'doPdf') exportPdf(kk, wh); else exportPrint(kk, wh);
+      if (wh === 'run') { modelPick = md; try { localStorage.setItem('denah_model', md); } catch (x) { /* abaikan */ } }
+      if (a === 'doPdf') exportPdf(kk, wh, md); else exportPrint(kk, wh, md);
       return;
     }
     if (a === 'runDoneGo') {
