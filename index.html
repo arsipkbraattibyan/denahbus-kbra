@@ -1087,6 +1087,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     var req = S.admin ? api.getFull(S.tok) : api.getData();
     return req.then(function (d) {
       if (mySeq !== loadSeq) return;                           // ada permintaan yang lebih baru: jawaban lama ini sudah usang, jangan ditampilkan
+      if (opts.silent && !opts.force && flushing) return;      // absen sedang dikirim: tunggu muat ulang setelah selesai
       S.netOk = true;
       var sig = JSON.stringify([d.buses, d.penumpang, d.ver, d.judul, d.sekolah, d.logo, d.rundown, d.runTgl, d.runMulai]);
       if (opts.silent && !opts.force && sig === S.sig) return;
@@ -2756,9 +2757,14 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     }
     Q.push(it); qSave(); updateQ(); flushQueue();
   }
+  /* absen yang baru saja terkirim diingat sebentar: data dari server yang diminta sebelum absen itu masuk (atau masih tersimpan di cache server)
+     tidak boleh membuat centang hilang lalu muncul lagi */
+  var R = [], R_MS = 25000;
   function applyQueue() {
-    if (!Q.length) return;
-    Q.forEach(function (it) {
+    var now = Date.now();
+    R = R.filter(function (x) { return now - x.at < R_MS; });
+    if (!R.length && !Q.length) return;
+    R.concat(Q).forEach(function (it) {
       S.pnp.forEach(function (p) {
         if (p.busId !== it.busId) return;
         if (it.k === 'clear') p.naik = false;
@@ -2784,7 +2790,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       var call = it.k === 'clear' ? api.clearNaik(S.tok, it.busId) : api.setNaik(S.tok, it.busId, it.kursi, it.val);
       function done() { var i = Q.indexOf(it); if (i > -1) Q.splice(i, 1); qSave(); updateQ(); }   // hapus item ini saja (bukan item pertama), karena antrean bisa berubah saat dikirim
       return call.then(function () {
-        done(); return step();
+        done(); R.push({ k: it.k, busId: it.busId, kursi: it.kursi, val: it.val, at: Date.now() });
+        return step();
       }, function (e) {
         if (/^Tidak bisa terhubung/.test(e.message)) { stop = true; return; }          // belum ada sinyal: coba lagi nanti
         if (AUTH_RE.test(e.message)) {                                                // sesi habis: antrean tetap disimpan
