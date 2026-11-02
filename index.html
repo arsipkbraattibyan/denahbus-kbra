@@ -372,6 +372,12 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#2b2350;color:#fff;padding:12px 20px;border-radius:99px;font-size:14px;font-weight:800;opacity:0;pointer-events:none;transition:.25s;z-index:90;max-width:90vw;text-align:center}
 #toast.show{opacity:1;transform:translateX(-50%)}
 #toast.err{background:var(--danger)}
+#toast.act{pointer-events:auto;display:flex;gap:12px;align-items:center;text-align:left}
+#toast .tundo{flex:0 0 auto;border:0;border-radius:99px;padding:7px 14px;background:var(--sun);color:#4a3200;font-weight:800;font-size:13px;cursor:pointer}
+#discard{position:fixed;inset:0;z-index:75;background:rgba(43,35,80,.5);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px}
+.pcall{display:flex;gap:6px;flex:0 0 auto}
+.cbtn{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;text-decoration:none;font-size:16px;background:var(--primary-soft);border:2px solid #fff}
+.cbtn.wa{background:var(--ok-soft)}
 
 .skeleton{height:420px;border-radius:28px;background:linear-gradient(90deg,#f1eefc 25%,#fff 50%,#f1eefc 75%);background-size:200% 100%;animation:sh 1.2s infinite}
 @keyframes sh{to{background-position:-200% 0}}
@@ -927,10 +933,69 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     clearTimeout(toastT);
     toastT = setTimeout(function () { t.className = ''; }, 3200);
   }
+  /* pesan kecil dengan tombol "Urungkan" (beberapa detik) */
+  var undoFn = null;
+  function toastUndo(msg, fn) {
+    var t = $('#toast');
+    undoFn = fn;
+    t.innerHTML = '<span>' + esc(msg) + '</span><button type="button" class="tundo" data-undo>↩️ Urungkan</button>';
+    t.className = 'act show';
+    clearTimeout(toastT);
+    toastT = setTimeout(function () { t.className = ''; undoFn = null; }, 7000);
+  }
+  $('#toast').addEventListener('click', function (e) {
+    if (!e.target.closest('[data-undo]')) return;
+    var f = undoFn; undoFn = null;
+    clearTimeout(toastT);
+    this.className = '';
+    if (f) f();
+  });
+
+  /* konfirmasi "Buang perubahan?": dialog berisi form dibandingkan dengan keadaan awalnya */
+  var guardSig = null;
+  var GUARD = { fSeat: 1, fBus: 1, fImport: 1, fRun: 1, fTgl: 1, fMulai: 1, fJudul: 1, fSekolah: 1, fPin: 1 };
+  function formSig() {
+    var f = $('#modal').querySelector('form');
+    if (!f || !GUARD[f.id]) return null;
+    var parts = [];
+    Array.prototype.forEach.call(f.elements, function (el) {
+      if (!el.name || el.disabled) return;
+      if ((el.type === 'radio' || el.type === 'checkbox') && !el.checked) return;
+      parts.push(el.name + '=' + el.value);
+    });
+    return parts.join('\u0001') + '|' + (f.id === 'fSekolah' && logoNew !== null ? 'L' : '');
+  }
+  function askDiscard() {
+    if ($('#discard')) return Promise.resolve(false);
+    return new Promise(function (res) {
+      var o = document.createElement('div');
+      o.id = 'discard';
+      o.innerHTML = '<div class="sheet" role="alertdialog" aria-modal="true"><h3>Buang perubahan?</h3>' +
+        '<p>Isian yang sudah Anda ketik belum disimpan dan akan hilang.</p><div class="actions">' +
+        '<button type="button" class="btn ghost" data-d="0">Lanjut mengisi</button>' +
+        '<button type="button" class="btn danger" data-d="1">Buang</button></div></div>';
+      o.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-d]');
+        if (!b) return;
+        if (o.parentNode) o.parentNode.removeChild(o);
+        res(b.dataset.d === '1');
+      });
+      document.body.appendChild(o);
+      var f = o.querySelector('[data-d="0"]'); if (f) f.focus();
+    });
+  }
+  function requestClose() {
+    if (guardSig !== null && formSig() !== guardSig) {
+      askDiscard().then(function (ok) { if (ok) closeModal(); });
+      return;
+    }
+    closeModal();
+  }
   function modal(html) {
     var m = $('#modal');
     m.innerHTML = '<div class="sheet" role="dialog" aria-modal="true">' + html + '</div>';
     m.classList.add('open');
+    guardSig = formSig();
     fitModal();
     var f = m.querySelector('input:not([type=radio]):not([type=checkbox]),select,textarea,button');
     if (f) setTimeout(function () { f.focus(); fitModal(); }, 60);
@@ -968,6 +1033,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   function closeModal() {
     if (confirmRes) { var r = confirmRes; confirmRes = null; r(false); }
     closePick();
+    guardSig = null;
+    var dc = $('#discard'); if (dc && dc.parentNode) dc.parentNode.removeChild(dc);
     var m = $('#modal');
     m.classList.remove('open');
     m.innerHTML = '';
@@ -1026,6 +1093,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if (!apiReady()) { if (!opts.silent) { applyTitle(); showSetup(); } return Promise.resolve(); }
     var req = S.admin ? api.getFull(S.tok) : api.getData();
     return req.then(function (d) {
+      S.netOk = true;
       var sig = JSON.stringify([d.buses, d.penumpang, d.ver, d.judul, d.sekolah, d.logo, d.rundown, d.runTgl, d.runMulai]);
       if (opts.silent && !opts.force && sig === S.sig) return;
       if (S.pending && opts.silent && !opts.force) return;     // jangan menimpa perubahan yang sedang dikirim
@@ -1045,11 +1113,12 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   }
 
   /* aksi guru biasa: tunggu server lalu muat ulang (untuk aksi yang jarang) */
-  function run(fn, okMsg) {
+  function run(fn, okMsg, onOk) {
     busy(true); S.pending++;
     return fn().then(function () {
       closeModal();
       if (okMsg) toast(okMsg);
+      if (onOk) { try { onOk(); } catch (x) { /* abaikan */ } }
       S.pending--;
       return load({ force: true, silent: true });
     }).catch(function (e) {
@@ -1112,16 +1181,51 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   }
   function clearNaikAll() {
     var b = curBus(), bid = S.busId;
-    var n = S.pnp.filter(function (p) { return p.busId === bid && p.naik; }).length;
-    if (!n) { toast('Belum ada yang ditandai naik'); return; }
-    confirmBox('Hapus tanda <b>sudah naik</b> untuk ' + n + ' orang di <b>' + esc(b.nama) + '</b>?', 'Clear Absen').then(function (ok) {
-      if (!ok) return;
-      S.pnp.forEach(function (p) { if (p.busId === bid) p.naik = false; });
-      S.sig = ''; render();
-      qAdd({ k: 'clear', busId: bid });
-      speak('Semua absen berhasil dihapus');
-      toast('Semua absen berhasil dihapus ✓');
+    var ids = S.pnp.filter(function (p) { return p.busId === bid && p.naik; }).map(function (p) { return p.kursi; });
+    if (!ids.length) { toast('Belum ada yang ditandai naik'); return; }
+    S.pnp.forEach(function (p) { if (p.busId === bid) p.naik = false; });
+    S.sig = ''; render();
+    qAdd({ k: 'clear', busId: bid });
+    speak('Semua absen berhasil dihapus');
+    toastUndo('Absen ' + ids.length + ' orang di ' + b.nama + ' dihapus', function () { undoClear(bid, ids); });
+  }
+  function undoClear(bid, ids) {
+    ids.forEach(function (code) {
+      var p = paxMap(bid)[code];
+      if (p) p.naik = true;
+      qAdd({ k: 'naik', busId: bid, kursi: code, val: 1 });
     });
+    S.sig = ''; render();
+    toast('Absen dikembalikan ✓');
+  }
+  /* urungkan "Kosongkan kursi": penumpang dikembalikan ke kursinya (beserta tanda sudah naik) */
+  function undoSeat(bid, p) {
+    if (paxMap(bid)[p.kursi]) { toast('Kursi ' + p.kursi + ' sudah terisi lagi, tidak bisa diurungkan', 'err'); return; }
+    var row = { kursi: p.kursi, nama: p.nama, tipe: p.tipe, info: p.info || '', hp: p.hp || '', catatan: p.catatan || '' };
+    opt(function () {
+      localSave(bid, '', row);
+      if (p.naik) { var q = paxMap(bid)[p.kursi]; if (q) q.naik = true; }
+    }, function () {
+      return api.savePenumpang(S.tok, { busId: bid, oldKursi: '', kursi: row.kursi, nama: row.nama, tipe: row.tipe, info: row.info, hp: row.hp, catatan: row.catatan })
+        .then(function () { return p.naik ? api.setNaik(S.tok, bid, p.kursi, 1) : null; });
+    }, 'Kursi dikembalikan ✓');
+  }
+  /* urungkan hapus kegiatan rundown: kegiatan dibuat ulang di posisi semula */
+  function restoreRun(orig, del) {
+    run(function () {
+      var prev = null, chain = Promise.resolve();
+      orig.forEach(function (x) {
+        if (del[x.id]) {
+          chain = chain.then(function () {
+            return api.saveRundown(S.tok, { id: '', kegiatan: x.kegiatan, ket: x.ket, durasi: x.durasi, after: prev || '^' })
+              .then(function (nid) { prev = nid; });
+          });
+        } else {
+          chain = chain.then(function () { prev = x.id; });
+        }
+      });
+      return chain;
+    }, 'Kegiatan dikembalikan ✓');
   }
   function toggleNaik(code) {
     var p = paxMap(S.busId)[code];
@@ -1257,6 +1361,23 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     return res;
   }
 
+  /* menit berakhirnya kegiatan ke-i (jam akhir, atau awal kegiatan berjam berikutnya); null bila tidak diketahui */
+  function runEnd(list, i) {
+    var t = parseJam(list[i].jam);
+    if (!t.length) return null;
+    if (t.length > 1) return t[1];
+    for (var j = i + 1; j < list.length; j++) {
+      var nt = parseJam(list[j].jam);
+      if (nt.length && nt[0] > t[0]) return nt[0];
+    }
+    return null;
+  }
+  function leftTxt(n) {
+    n = Math.max(1, Math.round(n));
+    var h = Math.floor(n / 60), m = n % 60;
+    return (h ? h + ' jam' : '') + (h && m ? ' ' : '') + (m ? m + ' menit' : '') + ' lagi';
+  }
+
   /* halaman Rundown: daftar kegiatan berurutan menurut jam; guru yang sudah masuk bisa menambah / mengubah */
   function rundownHtml() {
     var list = S.rund || [], st = runStatus(list), now = wibNow();
@@ -1287,10 +1408,14 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       } else if (now.d > S.rtgl || (timed && done === timed && jalanIdx < 0 && nextIdx < 0)) {
         hero = '<div class="rhero end"><span class="rk">🎉 Selesai</span><b>Semua kegiatan telah selesai</b><small>Terima kasih 🙏</small></div>';
       } else if (jalanIdx > -1) {
+        var endM = runEnd(list, jalanIdx);
         hero = '<div class="rhero now"><span class="rk">● Sedang berlangsung</span><b>' + esc(list[jalanIdx].kegiatan) + '</b><small>' +
-          esc(jamOf(list[jalanIdx])) + (list[jalanIdx].ket ? ' · ' + esc(list[jalanIdx].ket) : '') + '</small></div>';
+          esc(jamOf(list[jalanIdx])) + (endM !== null && endM > now.m ? ' · berakhir ' + leftTxt(endM - now.m) : '') +
+          (list[jalanIdx].ket ? ' · ' + esc(list[jalanIdx].ket) : '') + '</small></div>';
       } else if (nextIdx > -1) {
-        hero = '<div class="rhero"><span class="rk">⏭️ Berikutnya</span><b>' + esc(list[nextIdx].kegiatan) + '</b><small>Pukul ' +
+        var stM = parseJam(list[nextIdx].jam)[0];
+        hero = '<div class="rhero"><span class="rk">⏭️ Berikutnya</span><b>' + esc(list[nextIdx].kegiatan) + '</b><small>' +
+          (stM > now.m ? leftTxt(stM - now.m) + ' · ' : '') + 'pukul ' +
           esc(jamOf(list[nextIdx])) + (list[nextIdx].ket ? ' · ' + esc(list[nextIdx].ket) : '') + '</small></div>';
       }
     }
@@ -1413,7 +1538,9 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     var items = list.length ? list.map(function (p) {
       return '<div class="pitem" tabindex="0" data-focus="' + p.kursi + '"><span class="badge ' + tipeCls(p.tipe) + '">' +
         p.kursi + '</span><div class="who"><b>' + esc(p.nama) + '</b><small>' + descOf(p) + '</small></div>' +
-        (p.naik ? '<span class="ck" title="Sudah naik">✓</span>' : '') + '</div>';
+        (p.naik ? '<span class="ck" title="Sudah naik">✓</span>' : '') +
+        ((S.admin && p.hp) ? '<span class="pcall"><a class="cbtn" href="tel:' + esc(p.hp) + '" aria-label="Telepon ' + esc(p.nama) + '">📞</a>' +
+          '<a class="cbtn wa" target="_blank" rel="noopener" href="' + esc(waLink(p.hp)) + '" aria-label="WhatsApp ' + esc(p.nama) + '">💬</a></span>' : '') + '</div>';
     }).join('') : '<div class="muted" style="font-size:13px;padding:8px;font-weight:600">Belum ada penumpang.</div>';
 
     app.innerHTML = toolbar +
@@ -1549,8 +1676,10 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     var b = curBus(), p = paxMap(b.id)[code];
     if (!p) return;
     var cls = tipeCls(p.tipe);
+    var kontak = (S.admin && p.hp) ? '<div class="contact"><a class="btn tint small" href="tel:' + esc(p.hp) + '">📞 Telepon</a>' +
+      '<a class="btn ok small" target="_blank" rel="noopener" href="' + esc(waLink(p.hp)) + '">💬 WhatsApp</a></div>' : '';
     modal('<div class="info-card"><div class="seat-big ' + cls + '">' + code + '</div><div><h4>' + esc(p.nama) + '</h4><small>' +
-      descOf(p) + '</small><br><small>' + esc(b.nama) + ' · Kursi ' + code + (p.naik ? ' · ✅ sudah naik' : '') + '</small></div></div>' +
+      descOf(p) + '</small><br><small>' + esc(b.nama) + ' · Kursi ' + code + (p.naik ? ' · ✅ sudah naik' : '') + '</small></div></div>' + kontak +
       '<div class="actions"><button class="btn primary" data-close>Tutup</button></div>');
     speak(spokenInfo(p, code));
   }
@@ -1777,13 +1906,17 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     var msg = onlyDone
       ? 'Hapus <b>' + ids.length + ' kegiatan yang sudah selesai</b> dari rundown?'
       : 'Hapus <b>semua ' + ids.length + ' kegiatan</b> dari rundown? Tindakan ini tidak bisa dibatalkan.';
+    var orig = JSON.parse(JSON.stringify(list)), del = {};
+    ids.forEach(function (i) { del[i] = true; });
     confirmBox(msg, 'Hapus').then(function (ok) {
       if (!ok) return;
       run(function () {
         return api.deleteRundownMany(S.tok, ids).then(function () {
           speak(onlyDone ? 'Kegiatan yang selesai berhasil dihapus' : 'Semua kegiatan berhasil dihapus');
         });
-      }, ids.length + ' kegiatan dihapus ✓');
+      }, null, function () {
+        toastUndo(ids.length + ' kegiatan dihapus', function () { restoreRun(orig, del); });
+      });
     });
   }
 
@@ -2244,7 +2377,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     }
     if (e.target.closest('.ac input')) { acRender(e.target.value); return; }
     if (!e.target.closest('.ac')) acHide();
-    if (e.target.closest('[data-close]')) { closeModal(); return; }      // dialog hanya tertutup lewat tombol (bukan ketuk area luar)
+    if (e.target.closest('[data-close]')) { requestClose(); return; }      // dialog hanya tertutup lewat tombol (bukan ketuk area luar)
     var r = e.target.closest('[data-r]');
     if (r && confirmRes) { var fn = confirmRes; confirmRes = null; closeModal(); fn(r.dataset.r === '1'); return; }
     var act = e.target.closest('[data-act]');
@@ -2252,12 +2385,14 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     var a = act.dataset.act;
     if (a === 'clear') {
       var code = act.dataset.code, p = paxMap(S.busId)[code], bid = S.busId;
-      confirmBox('Kosongkan kursi <b>' + code + '</b>' + (p ? ' (' + esc(p.nama) + ')' : '') + '?', 'Kosongkan').then(function (ok) {
-        if (ok) {
-          opt(function () { S.pnp = S.pnp.filter(function (x) { return !(x.busId === bid && x.kursi === code); }); },
-              function () { return api.removePenumpang(S.tok, bid, code); }, 'Kursi dikosongkan');
-        } else openSeatForm(code);
-      });
+      if (!p) { closeModal(); return; }
+      var saved = JSON.parse(JSON.stringify(p));
+      closeModal();
+      opt(function () { S.pnp = S.pnp.filter(function (x) { return !(x.busId === bid && x.kursi === code); }); },
+          function () { return api.removePenumpang(S.tok, bid, code); }, null, function () {
+            toastUndo('Kursi ' + code + ' (' + saved.nama + ') dikosongkan', function () { undoSeat(bid, saved); });
+          });
+      return;
     }
     if (a === 'tandai') {
       toggleNaik(act.dataset.code);       // tandai sudah naik, lalu gambar ulang daftar (posisi gulir dipertahankan)
@@ -2307,11 +2442,12 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if (a === 'delRun') {
       var rid = act.dataset.id, rx = null;
       (S.rund || []).forEach(function (r) { if (r.id === rid) rx = r; });
-      confirmBox('Hapus kegiatan <b>' + esc(rx ? rx.kegiatan : '') + '</b> dari rundown?', 'Hapus').then(function (ok) {
-        if (ok) run(function () {
-          return api.deleteRundown(S.tok, rid).then(function () { speak('Kegiatan berhasil dihapus'); });
-        }, 'Kegiatan dihapus');
-        else openRunForm(rid);
+      var origR = JSON.parse(JSON.stringify(S.rund || [])), delR = {};
+      delR[rid] = true;
+      run(function () {
+        return api.deleteRundown(S.tok, rid).then(function () { speak('Kegiatan berhasil dihapus'); });
+      }, null, function () {
+        toastUndo('Kegiatan “' + (rx ? rx.kegiatan : '') + '” dihapus', function () { restoreRun(origR, delR); });
       });
       return;
     }
@@ -2517,6 +2653,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   var app = $('#app');
   app.addEventListener('click', function (e) {
     var t;
+    if (e.target.closest('a.cbtn')) return;                 // tombol telepon / WhatsApp di daftar: biarkan tautan bekerja
     if ((t = e.target.closest('[data-view]'))) { S.view = t.dataset.view; S.hl = null; S.moveFrom = null; render(); window.scrollTo(0, 0); return; }
     if (!e.target.closest('[data-act]') && (t = e.target.closest('[data-run]'))) { if (S.admin) openRunForm(t.dataset.run); return; }
     if ((t = e.target.closest('[data-bus]'))) { S.busId = t.dataset.bus; S.hl = null; S.moveFrom = null; render(); return; }
@@ -2780,8 +2917,48 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if (S.view !== 'run' || document.hidden || modalEl.classList.contains('open') || $('#pick')) return;
     if (rundownHtml() !== S.rhtml) render();
   }
-  setInterval(tickRundown, 30000);
+  setInterval(tickRundown, 15000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) tickRundown(); });
+
+  /* guru: bunyi, getar, dan suara saat kegiatan baru dimulai (hanya di hari acara, saat aplikasi terbuka) */
+  var lastJalan = null, audioCtx = null;
+  function audioUnlock() {
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      audioCtx = audioCtx || new AC();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    } catch (x) { /* abaikan */ }
+  }
+  document.addEventListener('pointerdown', audioUnlock, { passive: true });
+  function beep() {
+    try {
+      if (!audioCtx) return;
+      var t0 = audioCtx.currentTime;
+      [880, 1175].forEach(function (f, i) {
+        var o = audioCtx.createOscillator(), g = audioCtx.createGain(), s = t0 + i * 0.22;
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, s);
+        g.gain.exponentialRampToValueAtTime(0.25, s + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, s + 0.2);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(s); o.stop(s + 0.22);
+      });
+    } catch (x) { /* abaikan */ }
+  }
+  function watchRundown() {
+    if (!S.netOk) return;                                   // tunggu data segar dari server (bukan simpanan lama)
+    var list = S.rund || [], st = runStatus(list), i = st.indexOf('jalan'), id = i > -1 ? list[i].id : '';
+    if (lastJalan === null) { lastJalan = id; return; }     // pengecekan pertama: hanya mencatat, tidak berbunyi
+    if (id === lastJalan) return;
+    lastJalan = id;
+    if (!id || !S.admin) return;
+    try { if (navigator.vibrate) navigator.vibrate([250, 120, 250]); } catch (x) { /* abaikan */ }
+    toast('▶ Dimulai: ' + list[i].kegiatan);
+    if (S.suara) { beep(); setTimeout(function () { speak('Kegiatan ' + list[i].kegiatan + ' dimulai'); }, 700); }
+  }
+  setInterval(watchRundown, 15000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) watchRundown(); });
 
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
     window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () { /* abaikan */ }); });
