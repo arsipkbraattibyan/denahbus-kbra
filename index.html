@@ -1189,7 +1189,6 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if (val) speak(p.nama + ' sudah naik');
     p.naik = val; S.sig = ''; render();
     qAdd({ k: 'naik', busId: bid, kursi: code, val: val ? 1 : 0 });
-    toast(val ? '✓ ' + p.nama + ' sudah naik' : 'Batal naik: ' + p.nama);
   }
   function moveSeat(from, to) {
     var bid = S.busId, m = paxMap(bid);
@@ -2766,9 +2765,10 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   function updateQ() {
     var el = $('#qpill');
     if (!el) return;
-    if (!Q.length || !S.admin) { el.hidden = true; return; }
+    /* hanya tampil saat tidak ada sinyal (guru); "absen menunggu dikirim" saat online sengaja tidak ditampilkan */
+    if (!S.admin || navigator.onLine !== false) { el.hidden = true; return; }
     el.hidden = false;
-    el.textContent = (navigator.onLine === false ? '📴 Offline · ' : '⏳ ') + Q.length + ' absen menunggu dikirim';
+    el.textContent = '📴 Offline' + (Q.length ? ' · ' + Q.length + ' absen menunggu dikirim' : '');
   }
   function flushQueue() {
     if (flushing || !Q.length || !S.admin || !S.tok || navigator.onLine === false) return Promise.resolve();
