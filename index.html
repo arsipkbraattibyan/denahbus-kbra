@@ -1078,11 +1078,15 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if (!curBus()) S.busId = S.buses.length ? S.buses[0].id : null;
   }
 
+  var loadSeq = 0;
   function load(opts) {
     opts = opts || {};
     if (!apiReady()) { if (!opts.silent) { applyTitle(); showSetup(); } return Promise.resolve(); }
+    if (opts.silent && !opts.force && flushing) return Promise.resolve();     // sedang mengirim absen: biarkan selesai dulu (lalu ada muat ulang)
+    var mySeq = ++loadSeq;
     var req = S.admin ? api.getFull(S.tok) : api.getData();
     return req.then(function (d) {
+      if (mySeq !== loadSeq) return;                           // ada permintaan yang lebih baru: jawaban lama ini sudah usang, jangan ditampilkan
       S.netOk = true;
       var sig = JSON.stringify([d.buses, d.penumpang, d.ver, d.judul, d.sekolah, d.logo, d.rundown, d.runTgl, d.runMulai]);
       if (opts.silent && !opts.force && sig === S.sig) return;
@@ -2778,8 +2782,9 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       if (!Q.length || stop) return Promise.resolve();
       var it = Q[0];
       var call = it.k === 'clear' ? api.clearNaik(S.tok, it.busId) : api.setNaik(S.tok, it.busId, it.kursi, it.val);
+      function done() { var i = Q.indexOf(it); if (i > -1) Q.splice(i, 1); qSave(); updateQ(); }   // hapus item ini saja (bukan item pertama), karena antrean bisa berubah saat dikirim
       return call.then(function () {
-        Q.shift(); qSave(); updateQ(); return step();
+        done(); return step();
       }, function (e) {
         if (/^Tidak bisa terhubung/.test(e.message)) { stop = true; return; }          // belum ada sinyal: coba lagi nanti
         if (AUTH_RE.test(e.message)) {                                                // sesi habis: antrean tetap disimpan
@@ -2787,7 +2792,10 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
           toast('Sesi guru berakhir. Masuk lagi untuk mengirim ' + Q.length + ' absen tertunda.', 'err');
           return;
         }
-        Q.shift(); qSave(); updateQ(); failed++; return step();                       // ditolak server (mis. kursi sudah kosong): buang
+        if (!/kosong|tidak ditemukan|tidak ada|tidak valid/i.test(e.message) && (it.n = (it.n || 0) + 1) < 6) {
+          qSave(); stop = true; return;                                               // gangguan sementara (mis. server sibuk): simpan, kirim ulang nanti
+        }
+        done(); failed++; return step();                                              // benar-benar ditolak server (mis. kursi sudah kosong): buang
       });
     }
     return step().then(function () {
