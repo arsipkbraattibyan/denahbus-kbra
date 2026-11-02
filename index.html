@@ -1186,7 +1186,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     var p = paxMap(S.busId)[code];
     if (!p) { toast('Kursi ' + code + ' masih kosong'); return; }
     var val = !p.naik, bid = S.busId;
-    if (val) speak(p.nama + ' sudah naik');
+    speak(p.nama + (val ? ' sudah naik bus' : ' batal naik bus'));
     p.naik = val; S.sig = ''; render();
     qAdd({ k: 'naik', busId: bid, kursi: code, val: val ? 1 : 0 });
   }
