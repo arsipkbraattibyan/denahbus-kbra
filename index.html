@@ -343,6 +343,8 @@ main{max-width:1180px;margin:0 auto;padding:8px 16px 48px}
 .actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px;margin-top:20px}
 .actions .btn{width:100%;justify-content:center;text-align:center;white-space:nowrap}
 .actions .left{margin-right:0}
+.actions-edit{grid-template-columns:repeat(2,minmax(0,1fr))}
+.actions-edit .btn.primary{grid-column:1/-1}
 .actions .left[data-act="clear"]{color:var(--danger)}
 .err{color:var(--danger);font-size:13px;font-weight:800;margin-top:10px}
 .info-card{display:flex;gap:14px;align-items:center;margin:8px 0 4px}
@@ -1592,7 +1594,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         var t = s === code ? ' (saat ini)' : (o ? ' — ' + esc(o.nama) + ' (tukar)' : ' — kosong');
         return '<option value="' + s + '"' + (s === code ? ' selected' : '') + '>' + s + t + '</option>';
       }).join('') + '</select></label>' +
-      '<div class="actions">' + (p ? '<button type="button" class="btn ghost left" data-act="clear" data-code="' + code + '">Kosongkan</button>' : '') +
+      '<div class="actions' + (p ? ' actions-edit' : '') + '">' + (p ? '<button type="button" class="btn ghost left" data-act="clear" data-code="' + code + '">Kosongkan</button>' : '') +
       '<button type="button" class="btn ghost" data-close>Batal</button><button class="btn primary">Simpan</button></div></form>');
   }
 
