@@ -1372,11 +1372,29 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     }
     return null;
   }
-  function leftTxt(n) {
-    n = Math.max(1, Math.round(n));
-    var h = Math.floor(n / 60), m = n % 60;
-    return (h ? h + ' jam' : '') + (h && m ? ' ' : '') + (m ? m + ' menit' : '') + ' lagi';
+  /* hitung mundur berjalan per detik: yang disimpan di halaman hanya waktu sasaran (stabil dalam satu menit),
+     lalu satu pencacah ringan memperbarui teksnya tiap detik tanpa menggambar ulang halaman */
+  function cdText(ms) {
+    var s = Math.max(0, Math.ceil(ms / 1000));
+    if (s <= 0) return 'sekarang';
+    var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), d = s % 60;
+    return (h ? h + ' jam ' : '') + (h || m ? m + ' menit ' : '') + (h || m ? pad2(d) : d) + ' detik lagi';
   }
+  function leftTxt(targetMin, nowM) {
+    var at = Math.floor(Date.now() / 60000) * 60000 + (targetMin - nowM) * 60000;
+    return '<span class="cd" data-cd="' + at + '">' + cdText(at - Date.now()) + '</span>';
+  }
+  function tickCountdown() {
+    if (S.view !== 'run' || document.hidden) return;
+    var els = document.querySelectorAll('.cd'), over = false;
+    Array.prototype.forEach.call(els, function (el) {
+      var left = Number(el.dataset.cd) - Date.now();
+      el.textContent = cdText(left);
+      if (left <= 0 && !el.dataset.done) { el.dataset.done = '1'; over = true; }
+    });
+    if (over) { tickRundown(); watchRundown(); }
+  }
+  setInterval(tickCountdown, 1000);
 
   /* halaman Rundown: daftar kegiatan berurutan menurut jam; guru yang sudah masuk bisa menambah / mengubah */
   function rundownHtml() {
@@ -1410,12 +1428,12 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       } else if (jalanIdx > -1) {
         var endM = runEnd(list, jalanIdx);
         hero = '<div class="rhero now"><span class="rk">● Sedang berlangsung</span><b>' + esc(list[jalanIdx].kegiatan) + '</b><small>' +
-          esc(jamOf(list[jalanIdx])) + (endM !== null && endM > now.m ? ' · berakhir ' + leftTxt(endM - now.m) : '') +
+          esc(jamOf(list[jalanIdx])) + (endM !== null && endM > now.m ? ' · berakhir ' + leftTxt(endM, now.m) : '') +
           (list[jalanIdx].ket ? ' · ' + esc(list[jalanIdx].ket) : '') + '</small></div>';
       } else if (nextIdx > -1) {
         var stM = parseJam(list[nextIdx].jam)[0];
         hero = '<div class="rhero"><span class="rk">⏭️ Berikutnya</span><b>' + esc(list[nextIdx].kegiatan) + '</b><small>' +
-          (stM > now.m ? leftTxt(stM - now.m) + ' · ' : '') + 'pukul ' +
+          (stM > now.m ? 'mulai ' + leftTxt(stM, now.m) + ' · ' : '') + 'pukul ' +
           esc(jamOf(list[nextIdx])) + (list[nextIdx].ket ? ' · ' + esc(list[nextIdx].ket) : '') + '</small></div>';
       }
     }
