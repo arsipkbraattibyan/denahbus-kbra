@@ -739,9 +739,10 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   var KELAS = ['KB', 'TK A', 'TK B'];       // pilihan kelas untuk anak
   var TUGAS = ['Kepala Sekolah', 'Wali Kelas KB', 'Wali Kelas TK A', 'Wali Kelas TK B'];  // pilihan tugas untuk guru
   var GURU = ['Ust. Aini', 'Ust. Eli', 'Ust. Zulfa', 'Ust. Luluk', 'Operator'];          // pilihan nama saat login (harus sama dengan GURU_LIST di Code.gs)
+  var OPERATOR = 'Operator';                                                              // hanya nama ini yang melihat menu Kunjungan (harus sama dengan OPERATOR di Code.gs)
   /* ========================== */
 
-  var NEED_VER = 17;                    // versi Code.gs yang dibutuhkan halaman ini
+  var NEED_VER = 18;                    // versi Code.gs yang dibutuhkan halaman ini
   var LETTERS = 'ABCDEF';
   var $ = function (s, el) { return (el || document).querySelector(s); };
   var esc = function (s) {
@@ -793,7 +794,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   }
   var api = { getData: function () { return rpc('getData', []); } };
   ['login', 'logout', 'getFull', 'getLog', 'saveJudul', 'saveSekolah', 'savePenumpang', 'movePenumpang', 'removePenumpang',
-   'setNaik', 'clearNaik', 'importPenumpang', 'saveBus', 'deleteBus', 'changePin', 'saveRundown', 'deleteRundown', 'deleteRundownMany', 'saveRunTgl', 'saveRunMulai', 'adjustRundown']
+   'setNaik', 'clearNaik', 'importPenumpang', 'saveBus', 'deleteBus', 'changePin', 'saveRundown', 'deleteRundown', 'deleteRundownMany', 'saveRunTgl', 'saveRunMulai', 'adjustRundown', 'visit', 'getVisits', 'setOpPin']
     .forEach(function (n) {
       api[n] = function () { return rpc(n, Array.prototype.slice.call(arguments)); };
     });
@@ -1639,6 +1640,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         it('sekolah', '🏫 Sekolah / Logo', 'Nama sekolah dan logo') +
         it('suara', S.suara ? '🔊 Suara: nyala' : '🔇 Suara: mati', 'Ketuk untuk menyalakan / mematikan') +
         it('log', '🕘 Riwayat', 'Catatan perubahan oleh guru') +
+        (S.guruNama === OPERATOR ? it('visit', '👁️ Kunjungan', 'Siapa saja yang membuka aplikasi (khusus Operator)') : '') +
         it('pin', '🔑 Ganti PIN', 'Ubah PIN guru');
     }
     modal('<h3>' + title + '</h3><div class="menu-list">' + h + '</div><div class="actions"><button class="btn ghost" data-close>Tutup</button></div>');
@@ -1799,6 +1801,78 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         '</div><div class="actions"><button class="btn primary" data-close>Tutup</button></div>');
     }).catch(function (e) { if (!authFail(e)) toast(e.message, 'err'); })
       .then(function () { busy(false); });
+  }
+
+  /* ---------- riwayat kunjungan (khusus Operator + PIN Operator) ---------- */
+  var opPin = '';                          // PIN Operator hanya di memori selama dialog dipakai; tidak disimpan di HP
+  function openVisits(pin) {
+    if (S.guruNama !== OPERATOR) { toast('Riwayat kunjungan hanya untuk Operator.', 'err'); return; }
+    busy(true);
+    api.getVisits(S.tok, pin || '').then(function (r) {
+      if (r.needSetup) { opPin = ''; openOpPinForm(false); return; }
+      if (r.needPin) { opPin = ''; openOpAsk(); return; }
+      opPin = pin;
+      var rows = r.rows || [], dev = {};
+      rows.forEach(function (x) { dev[x.kode] = 1; });
+      modal('<h3>👁️ Kunjungan terakhir</h3>' +
+        '<p class="muted" style="margin:0 0 8px">' + rows.length + ' kunjungan terakhir dari <b>' + Object.keys(dev).length + '</b> perangkat. ' +
+        'Guru yang sudah masuk tampil dengan namanya; yang belum masuk tampil sebagai Pengunjung (kode perangkat).</p>' +
+        '<div style="max-height:50vh;overflow:auto">' +
+        (rows.length ? rows.map(function (x) {
+          var kode = x.kode ? ' <small class="muted">· #' + esc(String(x.kode).slice(0, 4).toUpperCase()) + '</small>' : '';
+          return '<div class="logrow"><time>' + esc(x.waktu.slice(5, 16)) + '</time><span><b>' + esc(x.siapa) + '</b>' +
+            (x.perangkat ? ' · ' + esc(x.perangkat) : '') + kode + '</span></div>';
+        }).join('') : '<p class="muted">Belum ada kunjungan tercatat.</p>') +
+        '</div><div class="actions"><button type="button" class="btn ghost left" data-vis="refresh">🔄 Segarkan</button>' +
+        '<button type="button" class="btn ghost" data-vis="pin">🔑 PIN Operator</button>' +
+        '<button type="button" class="btn primary" data-close>Tutup</button></div>');
+    }).catch(function (e) {
+      if (authFail(e)) return;
+      var box = $('#err');
+      if (box && modalEl.classList.contains('open')) box.textContent = e.message; else toast(e.message, 'err');
+    }).then(function () { busy(false); });
+  }
+  function openOpAsk() {
+    modal('<h3>👁️ Riwayat Kunjungan</h3><p class="muted">Khusus Operator. Masukkan PIN Operator.</p>' +
+      '<form id="fOpAsk"><label>PIN Operator<input type="password" name="pin" inputmode="numeric" autocomplete="off" required></label>' +
+      '<div class="err" id="err"></div><div class="actions"><button type="button" class="btn ghost" data-close>Batal</button>' +
+      '<button class="btn primary">Buka</button></div></form>');
+  }
+  function openOpPinForm(ganti) {
+    modal('<h3>🔑 ' + (ganti ? 'Ganti PIN Operator' : 'Buat PIN Operator') + '</h3>' +
+      '<p class="muted">' + (ganti ? 'Masukkan PIN Operator lama, lalu PIN baru.' :
+        'PIN ini hanya untuk membuka riwayat kunjungan dan harus berbeda dari PIN guru. Simpan baik-baik.') + ' Minimal 4 karakter.</p>' +
+      '<form id="fOpPin">' + (ganti ? '<label>PIN Operator lama<input type="password" name="old" required autocomplete="off"></label>' : '') +
+      '<label>PIN Operator baru<input type="password" name="a" required minlength="4" maxlength="20" autocomplete="off"></label>' +
+      '<label>Ulangi PIN Operator baru<input type="password" name="b" required minlength="4" maxlength="20" autocomplete="off"></label>' +
+      '<div class="err" id="err"></div><div class="actions"><button type="button" class="btn ghost" data-close>Batal</button>' +
+      '<button class="btn primary">Simpan PIN</button></div></form>');
+  }
+
+  /* kode acak perangkat + label singkat (mis. "Android · Chrome"); dikirim ke server saat aplikasi dibuka */
+  function deviceId() {
+    var id = '';
+    try { id = localStorage.getItem('denah_did') || ''; } catch (x) { /* abaikan */ }
+    if (!/^[A-Za-z0-9]{6,12}$/.test(id)) {
+      id = '';
+      for (var i = 0; i < 8; i++) id += 'abcdefghijkmnpqrstuvwxyz23456789'.charAt(Math.floor(Math.random() * 32));
+      try { localStorage.setItem('denah_did', id); } catch (x) { /* abaikan */ }
+    }
+    return id;
+  }
+  function deviceLabel() {
+    var u = navigator.userAgent || '';
+    var os = /Android/i.test(u) ? 'Android' : /iPhone|iPad|iPod/i.test(u) ? 'iPhone/iPad' : /Windows/i.test(u) ? 'Windows' : /Mac OS X|Macintosh/i.test(u) ? 'Mac' : /Linux/i.test(u) ? 'Linux' : 'Perangkat';
+    var br = /Edg\//i.test(u) ? 'Edge' : /OPR\/|Opera/i.test(u) ? 'Opera' : /SamsungBrowser/i.test(u) ? 'Samsung Internet' : /Firefox|FxiOS/i.test(u) ? 'Firefox' : /Chrome|CriOS/i.test(u) ? 'Chrome' : /Safari/i.test(u) ? 'Safari' : '';
+    var app = false;
+    try { app = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; } catch (x) { /* abaikan */ }
+    return os + (br ? ' · ' + br : '') + (app ? ' · aplikasi' : '');
+  }
+  var lastVisit = 0;
+  function catatKunjungan() {
+    if (!apiReady() || navigator.onLine === false) return;
+    lastVisit = Date.now();
+    api.visit(deviceId(), deviceLabel(), S.tok || '').catch(function () { /* pencatatan tidak boleh mengganggu aplikasi */ });
   }
 
   function fmtDur(m) {
@@ -2471,6 +2545,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
         closeModal(); updateHeader(); render(); toast('Mode guru aktif ✓');
         load({ silent: true, force: true });       // ambil data lengkap (HP & catatan)
         flushQueue();                              // kirim absen yang tertunda (jika ada)
+        catatKunjungan();                          // catat kunjungan atas nama guru ini
       }).catch(function (er) {
         var box = $('#err'); if (box) box.textContent = er.message;
       }).then(function () { busy(false); });
@@ -2546,6 +2621,17 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       run(function () { return api.saveJudul(S.tok, d.get('judul')); }, 'Judul diubah ✓');
     } else if (f.id === 'fSekolah') {
       run(function () { return api.saveSekolah(S.tok, d.get('sekolah'), logoNew); }, 'Identitas sekolah disimpan ✓');
+    } else if (f.id === 'fOpAsk') {
+      openVisits(String(d.get('pin') || ''));
+    } else if (f.id === 'fOpPin') {
+      if (d.get('a') !== d.get('b')) { $('#err').textContent = 'PIN tidak sama.'; return; }
+      var npo = String(d.get('a'));
+      busy(true);
+      api.setOpPin(S.tok, npo, String(d.get('old') || '')).then(function () {
+        toast('PIN Operator disimpan ✓');
+        openVisits(npo);
+      }).catch(function (er) { if (!authFail(er)) { var bx = $('#err'); if (bx) bx.textContent = er.message; } })
+        .then(function () { busy(false); });
     } else if (f.id === 'fPin') {
       if (d.get('a') !== d.get('b')) { $('#err').textContent = 'PIN tidak sama.'; return; }
       var np = d.get('a');
@@ -2560,6 +2646,8 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     if (e.key === 'Escape' && $('#pick')) { closePick(); return; }
   });
   modalEl.addEventListener('click', function (e) {
+    var vb = e.target.closest('[data-vis]');
+    if (vb) { if (vb.dataset.vis === 'refresh') openVisits(opPin); else if (vb.dataset.vis === 'pin') openOpPinForm(true); return; }
     var sb = e.target.closest('[data-sub]');
     if (sb) { runSub(sb.dataset.sub); return; }
     var db = e.target.closest('[data-dur]');
@@ -2669,6 +2757,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
       else if (a === 'editBus') openBusForm(true);
       else if (a === 'import') openImport();
       else if (a === 'log') openLog();
+      else if (a === 'visit') openVisits('');
       else if (a === 'belum') openBelumNaik();
       else if (a === 'judul') openJudulForm();
       else if (a === 'sekolah') openSekolahForm();
@@ -2882,6 +2971,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
   updateHeader();
   salam();
   load({ force: true });
+  catatKunjungan();                       // catat kunjungan (nama guru bila sudah masuk, jika tidak "Pengunjung")
   flushQueue();
   setInterval(flushQueue, 20000);
   window.addEventListener('online', function () { updateQ(); flushQueue(); });
@@ -2894,6 +2984,7 @@ footer.foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--muted
     load({ silent: true });
   }, REFRESH_MS);
   document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && Date.now() - lastVisit > 1800000) catatKunjungan();   // dibuka lagi setelah >30 menit: catat lagi
     if (!document.hidden && !S.pending && !modalEl.classList.contains('open')) load({ silent: true });
   });
   /* rundown: tanda selesai / sedang berlangsung ikut berubah seiring waktu (cek tiap 30 detik, gambar ulang hanya jika berubah) */
